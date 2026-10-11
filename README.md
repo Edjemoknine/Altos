@@ -1,159 +1,211 @@
-# Turborepo starter
+# Altos
 
-This Turborepo starter is maintained by the Turborepo core team.
+Altos is an AI support SaaS platform that helps businesses deploy intelligent customer support agents powered by retrieval-augmented generation (RAG), website knowledge ingestion, and embeddable chat widgets.
 
-## Using this example
+The product combines a modern SaaS dashboard, backend AI services, a customer-facing widget, and a scalable ingestion pipeline for website content and documents.
 
-Run the following command:
+## Why this project matters
 
-```sh
-npx create-turbo@latest
+This project demonstrates a production-style architecture for building AI-powered customer support systems with:
+
+- Multi-tenant SaaS foundations
+- Authentication and authorization
+- Subscription and billing flows
+- Web crawling and document ingestion
+- RAG-powered search and answer generation
+- Vector similarity search with PostgreSQL + pgvector
+- Embeddings and LLM interaction
+- Background jobs and Redis-based queue workers
+- Usage metering and rate limiting
+- Embeddable JavaScript widget integration
+- Job progress tracking and analytics
+
+## Core features
+
+- Create and manage AI agents per customer or tenant
+- Connect website URLs and document sources such as PDF, DOCX, and text files
+- Crawl and process website content asynchronously
+- Clean and chunk documents before embedding
+- Store and retrieve context using vector search
+- Answer customer questions with grounded LLM responses
+- Provide a widget that can be embedded on any website
+- Give teams a dashboard to manage sources, conversations, and analytics
+
+## Tech stack
+
+### Frontend
+
+- Next.js
+- TypeScript
+- Tailwind CSS
+- shadcn/ui
+- React Hook Form
+- Zod
+- TanStack Query
+
+### Backend
+
+- Hono API
+- PostgreSQL
+- Drizzle ORM
+- Neon
+- Better Auth + Clerk
+
+### AI and data
+
+- OpenAI Embeddings or HuggingFace inference
+- pgvector
+- PostgreSQL
+
+### Scraping and background jobs
+
+- Firecrawl
+- Redis
+- BullMQ
+- Worker
+- Inngest
+
+## Architecture overview
+
+```bash
+                     ┌─────────────────────┐
+                     │   Your SaaS App     │
+                     │                     │
+                     │ Sign up / Billing   │
+                     │ Create AI Agent     │
+                     │ Manage Knowledge    │
+                     │ Customize Widget    │
+                     └──────────┬──────────┘
+                                │
+                         Create Agent
+                                │
+                    ┌───────────▼──────────┐
+                    │    Knowledge Base    │
+                    │                      │
+                    │ Website URL           │
+                    │ PDF / DOCX / TXT      │
+                    │ Manual text           │
+                    └───────────┬──────────┘
+                                │
+                          Background Job
+                                │
+                    ┌───────────▼──────────┐
+                    │       Worker         │
+                    │                      │
+                    │ Crawl website        │
+                    │ Clean content        │
+                    │ Chunk documents      │
+                    │ Generate embeddings  │
+                    │ Store vectors        │
+                    └───────────┬──────────┘
+                                │
+                         Knowledge Base
+                                │
+          ┌─────────────────────┴────────────────────┐
+          │                                          │
+┌─────────▼─────────┐                      ┌─────────▼─────────┐
+│   Dashboard       │                      │ Customer Website  │
+│                   │                      │                   │
+│ Test chatbot      │                      │ <script> widget   │
+│ Sources           │                      │                   │
+│ Conversations     │                      │                   │
+│ Analytics         │                      │                   │
+└───────────────────┘                      └─────────┬─────────┘
+                                                     │
+                                              User asks question
+                                                     │
+                                            ┌────────▼────────┐
+                                            │ Your Chat API   │
+                                            │                 │
+                                            │ Retrieve docs   │
+                                            │ → LLM           │
+                                            │ → Answer        │
+                                            └─────────────────┘
 ```
 
-## What's inside?
+## Project structure
 
-This Turborepo includes the following packages/apps:
-
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `@next/eslint-plugin-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo build
+```bash
+Altos/
+├── apps/
+│   ├── api/          # Hono.js backend API
+│   ├── web/          # Next.js SaaS dashboard
+│   └── widget/       # Embeddable chat widget
+├── packages/
+│   ├── auth/         # Auth utilities and configuration
+│   ├── db/           # Drizzle + Neon database layer
+│   ├── ui/           # Shared UI primitives
+│   └── typescript-config/
+├── docs/
+│   ├── scraping.md
+│   ├── stacks.md
+│   ├── structure.md
+│   └── workflow.md
+├── package.json
+├── pnpm-lock.yaml
+├── pnpm-workspace.yaml
+├── turbo.json
+├── .gitignore
+└── README.md
 ```
 
-Without global `turbo`, use your package manager:
+## Documentation
 
-```sh
-cd my-turborepo
-npx turbo build
-pnpm exec turbo build
-pnpm exec turbo build
+The repository includes detailed project documentation in the docs directory:
+
+- [docs/scraping.md](./docs/scraping.md) — website ingestion and scraping workflow
+- [docs/stacks.md](./docs/stacks.md) — technologies used across the platform
+- [docs/structure.md](./docs/structure.md) — product and architecture overview
+- [docs/workflow.md](./docs/workflow.md) — end-to-end product workflow
+
+## Getting started
+
+### Prerequisites
+
+- Node.js 24+
+- pnpm
+- PostgreSQL with pgvector support
+- Redis
+- Access to an AI provider such as OpenAI or Hugging Face
+
+### Install dependencies
+
+```bash
+pnpm install
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+### Run the monorepo in development mode
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo build --filter=docs
+```bash
+pnpm dev
 ```
 
-Without global `turbo`:
+### Build the project
 
-```sh
-npx turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+```bash
+pnpm build
 ```
 
-### Develop
+### Lint and type-check
 
-To develop all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo dev
+```bash
+pnpm lint
+pnpm check-types
 ```
 
-Without global `turbo`, use your package manager:
+## Typical product workflow
 
-```sh
-cd my-turborepo
-npx turbo dev
-pnpm exec turbo dev
-pnpm exec turbo dev
-```
+1. A user creates an AI support agent.
+2. The system ingests website or document knowledge.
+3. Background workers process and embed the content.
+4. A widget is generated for the customer website.
+5. Visitors ask questions in the widget.
+6. The app retrieves relevant context and responds with an LLM-backed answer.
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+## License
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+This project is a portfolio and product prototype. Update the license file or licensing terms based on your distribution requirements.
 
-```sh
-turbo dev --filter=web
-```
+## Summary
 
-Without global `turbo`:
-
-```sh
-npx turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-pnpm exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-pnpm exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+Altos is a practical example of how to combine modern infrastructure, AI retrieval, and customer-facing product design into a single SaaS experience. It is well suited for portfolio, demo, or MVP purposes and demonstrates real-world AI product architecture.

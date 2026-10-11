@@ -105,4 +105,3 @@ pnpm start
 ## Notes
 
 This service is designed as a scalable backend foundation for an AI-driven customer support platform. The initial structure is intentionally modular so that auth, storage, retrieval, embeddings, and analytics can be added incrementally without disrupting the application architecture.
-

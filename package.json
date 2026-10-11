@@ -1,12 +1,19 @@
 {
   "name": "Altos",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev",
-    "lint": "turbo run lint",
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "check-types": "turbo run check-types",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "check-types": "turbo run check-types"
+    "db:generate": "npm run db:generate --workspace=@repo/database",
+    "db:migrate": "npm run db:migrate --workspace=@repo/database",
+    "db:studio": "npm run db:studio --workspace=@repo/database"
   },
   "devDependencies": {
     "prettier": "3.9.6",
