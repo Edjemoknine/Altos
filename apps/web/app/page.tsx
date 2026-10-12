@@ -1,3 +1,4 @@
+import { Button } from "@repo/ui/components/button";
 import styles from "./page.module.css";
 
 const metrics = [
@@ -48,7 +49,11 @@ const stack = [
 
 export default function Home() {
   return (
-    <div className={styles.page}>
+    <>
+      <Button variant="destructive">Tailwind works</Button>
+      <h1 className="text-2xl text-lime-400 ">Altos</h1>
+    </>
+    /* <div className={styles.page}>
       <header className={styles.hero}>
         <nav className={styles.nav} aria-label="Main navigation">
           <div className={styles.brand}>
@@ -200,6 +205,6 @@ export default function Home() {
           hello@altos.ai
         </a>
       </footer>
-    </div>
+    </div> */
   );
 }

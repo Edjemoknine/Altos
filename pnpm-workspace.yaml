@@ -3,3 +3,9 @@ packages:
   - "packages/*"
 allowBuilds:
   esbuild: true
+catalog:
+  react: ^19
+  react-dom: ^19
+  tailwindcss: ^4.3.3
+  "@tailwindcss/postcss": ^4
+  typescript: ^5.9.3
