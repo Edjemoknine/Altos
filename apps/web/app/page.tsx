@@ -50,7 +50,7 @@ const stack = [
 export default function Home() {
   return (
     <>
-      <Button variant="destructive">Tailwind works</Button>
+      <Button variant="default">Tailwind works</Button>
       <h1 className="text-2xl text-lime-400 ">Altos</h1>
     </>
     /* <div className={styles.page}>

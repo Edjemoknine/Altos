@@ -1,17 +1,15 @@
 {
   "extends": "@repo/typescript-config/nextjs.json",
   "compilerOptions": {
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
-    "strictNullChecks": true
+    "plugins": [{ "name": "next" }],
+    "strictNullChecks": true,
+  /*   "baseUrl": ".",
+    "ignoreDeprecations": "6.0", */
+    "paths": {
+      "@/*": ["./*"],
+      "@repo/ui/*": ["../../packages/ui/src/*"]
+    }
   },
-  "paths": {
-  "@/*": ["./src/*"],
-  "@repo/ui/*": ["../../packages/ui/src/*"]
-},
   "include": [
     "**/*.ts",
     "**/*.tsx",

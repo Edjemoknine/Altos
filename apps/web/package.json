@@ -13,6 +13,7 @@
   "dependencies": {
     "@repo/ui": "workspace:*",
     "api": "workspace:*",
+    "cn": "^0.4.0",
     "hono": "^4.13.13",
     "next": "latest",
     "react": "catalog:",
