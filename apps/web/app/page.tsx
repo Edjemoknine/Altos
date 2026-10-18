@@ -1,48 +1,4 @@
-const metrics = [
-  { label: "Agents launched", value: "1.2K+" },
-  { label: "Avg. response time", value: "< 2s" },
-  { label: "Support coverage", value: "24/7" },
-];
-
-const features = [
-  {
-    title: "Multi-agent workspace",
-    description:
-      "Create, manage, and personalize multiple AI agents for different teams, products, or customer journeys.",
-  },
-  {
-    title: "Knowledge-powered answers",
-    description:
-      "Upload documents or scrape site content to ground each assistant in your business context and documentation.",
-  },
-  {
-    title: "Voice + text support",
-    description:
-      "Let visitors chat in real time or speak naturally with text-to-speech and speech-to-text support built in.",
-  },
-  {
-    title: "Embedded website widget",
-    description:
-      "Deploy a lightweight script anywhere to help visitors instantly reach your AI support assistant.",
-  },
-];
-
-const workflow = [
-  "Create your account and workspace",
-  "Customize the agent tone and role",
-  "Train with website and document data",
-  "Generate an API key and embed the widget",
-  "Monitor analytics and optimize conversations",
-];
-
-const stack = [
-  "Next.js",
-  "TypeScript",
-  "Hono API",
-  "Supabase",
-  "OpenAI",
-  "Vector Search",
-];
+import { features, metrics, stack, workflow } from "@/lib/constants";
 
 export default function Home() {
   return (
@@ -56,7 +12,10 @@ export default function Home() {
           aria-label="Main navigation"
           className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-6 sm:px-10 lg:px-12"
         >
-          <a href="#" className="flex items-center gap-3 text-xl font-semibold tracking-tight">
+          <a
+            href="#"
+            className="flex items-center gap-3 text-xl font-semibold tracking-tight"
+          >
             <span className="flex size-9 items-center justify-center rounded-xl bg-[#c5ef70] text-sm font-bold text-[#142016]">
               A
             </span>
@@ -75,12 +34,20 @@ export default function Home() {
             </a>
           </div>
 
-          <a
-            href="#contact"
-            className="rounded-full border border-white/15 px-5 py-2.5 text-sm font-medium transition hover:border-[#c5ef70]/60 hover:bg-white/5"
-          >
-            Book a demo
-          </a>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <a
+              href="#contact"
+              className="hidden rounded-full border border-white/15 px-5 py-2.5 text-sm font-medium transition hover:border-[#c5ef70]/60 hover:bg-white/5 sm:inline-flex"
+            >
+              Book a demo
+            </a>
+            <a
+              href="/sign-up"
+              className="rounded-full bg-[#c5ef70] px-5 py-2.5 text-sm font-semibold text-[#17221b] transition hover:bg-[#d4f596]"
+            >
+              Sign up
+            </a>
+          </div>
         </nav>
 
         <div className="mx-auto grid w-full max-w-7xl items-center gap-14 px-6 pb-20 pt-12 sm:px-10 sm:pb-24 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:px-12 lg:pb-28 lg:pt-16">
@@ -141,8 +108,12 @@ export default function Home() {
                   ✦
                 </span>
                 <div>
-                  <p className="text-sm font-semibold text-white">Support Agent</p>
-                  <p className="mt-0.5 text-xs text-white/45">Altos assistant</p>
+                  <p className="text-sm font-semibold text-white">
+                    Support Agent
+                  </p>
+                  <p className="mt-0.5 text-xs text-white/45">
+                    Altos assistant
+                  </p>
                 </div>
               </div>
               <span className="flex items-center gap-1.5 rounded-full bg-[#c5ef70]/10 px-2.5 py-1 text-xs font-medium text-[#d3f59a]">
@@ -207,7 +178,13 @@ export default function Home() {
                 className="rounded-2xl border border-[#e7eae2] bg-white p-6 transition duration-200 hover:-translate-y-1 hover:border-[#cad6bb] hover:shadow-lg hover:shadow-[#273a20]/5 sm:p-7"
               >
                 <span className="flex size-11 items-center justify-center rounded-xl bg-[#edf4e3] text-lg text-[#547833]">
-                  {index === 0 ? "✦" : index === 1 ? "⌘" : index === 2 ? "◖" : "↗"}
+                  {index === 0
+                    ? "✦"
+                    : index === 1
+                      ? "⌘"
+                      : index === 2
+                        ? "◖"
+                        : "↗"}
                 </span>
                 <h3 className="mt-6 text-lg font-semibold tracking-tight">
                   {feature.title}
