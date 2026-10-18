@@ -2,6 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Badge } from "@repo/ui/components/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@repo/ui/components/table";
 import {
   Activity,
   ArrowRight,
@@ -87,17 +96,17 @@ export default function DashboardOverviewPage() {
             }
           />
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[650px] text-left">
-              <thead>
-                <tr className="bg-[#fbfcfa] text-[10px] font-semibold uppercase tracking-[0.08em] text-[#98a096]">
-                  <th className="px-6 py-3">Agent / activity</th>
-                  <th className="px-4 py-3">Type</th>
-                  <th className="px-4 py-3">Time</th>
-                  <th className="px-4 py-3 text-right">Tokens</th>
-                  <th className="px-6 py-3 text-right">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#f0f2ed]">
+            <Table className="min-w-[650px] text-left">
+              <TableHeader>
+                <TableRow className="border-0 bg-[#fbfcfa] text-[10px] font-semibold uppercase tracking-[0.08em] text-[#98a096] hover:bg-[#fbfcfa]">
+                  <TableHead className="px-6 py-3">Agent / activity</TableHead>
+                  <TableHead className="px-4 py-3">Type</TableHead>
+                  <TableHead className="px-4 py-3">Time</TableHead>
+                  <TableHead className="px-4 py-3 text-right">Tokens</TableHead>
+                  <TableHead className="px-6 py-3 text-right">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-[#f0f2ed]">
                 {activityRows.map((row, index) => {
                   const type = modes.find((mode) => mode.title === row.mode) ?? {
                     title: "Text chat",
@@ -106,35 +115,35 @@ export default function DashboardOverviewPage() {
                   };
                   const Icon = type.icon;
                   return (
-                    <tr className="text-xs" key={`${row.agent}-${row.time}`}>
-                      <td className="px-6 py-3.5">
+                    <TableRow className="border-[#f0f2ed] text-xs hover:bg-[#fbfcfa]" key={`${row.agent}-${row.time}`}>
+                      <TableCell className="px-6 py-3.5">
                         <div className="font-medium text-[#344137]">{row.agent}</div>
                         <div className="mt-1 text-[10px] text-[#99a198]">{row.detail}</div>
-                      </td>
-                      <td className="px-4 py-3.5">
+                      </TableCell>
+                      <TableCell className="px-4 py-3.5">
                         <span className="inline-flex items-center gap-2 whitespace-nowrap text-[#647064]">
                           <span className={`flex size-7 items-center justify-center rounded-lg ${type.color}`}>
                             <Icon aria-hidden="true" className="size-3.5" />
                           </span>
                           {row.mode}
                         </span>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3.5 text-[#879087]">{row.time}</td>
-                      <td className="px-4 py-3.5 text-right font-medium tabular-nums text-[#455147]">
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap px-4 py-3.5 text-[#879087]">{row.time}</TableCell>
+                      <TableCell className="px-4 py-3.5 text-right font-medium tabular-nums text-[#455147]">
                         {row.tokens}
-                      </td>
-                      <td className="px-6 py-3.5 text-right">
-                        <span className={`rounded-full px-2 py-1 text-[10px] font-medium ${
+                      </TableCell>
+                      <TableCell className="px-6 py-3.5 text-right">
+                        <Badge className={`h-auto rounded-full border-0 px-2 py-1 text-[10px] font-medium ${
                           index === 3 ? "bg-[#f4f1e8] text-[#9b8046]" : "bg-[#eff5e9] text-[#66874d]"
                         }`}>
                           {index === 3 ? "Processing" : row.status}
-                        </span>
-                      </td>
-                    </tr>
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
           <div className="flex items-center justify-between border-t border-[#eff1ec] px-6 py-3.5">
             <span className="text-[11px] text-[#96a096]">Showing your latest agent events</span>

@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Badge } from "@repo/ui/components/badge";
+import { Button } from "@repo/ui/components/button";
 import { ArrowUpRight, Bot, Globe2, MoreHorizontal, Sparkles, Trash2 } from "lucide-react";
 import {
   CreateAction,
@@ -71,14 +73,14 @@ export default function AgentsPage() {
                 <span className="flex size-11 items-center justify-center rounded-[14px] bg-[#f0f4eb] text-[#5f7a4c]">
                   <Bot aria-hidden="true" className="size-5" />
                 </span>
-                <button aria-label={`More options for ${agent.name}`} className="flex size-8 items-center justify-center rounded-lg text-[#929b90] hover:bg-[#f4f6f1] hover:text-[#445146]">
+                <Button aria-label={`More options for ${agent.name}`} className="size-8 rounded-lg text-[#929b90] hover:bg-[#f4f6f1] hover:text-[#445146]" size="icon-sm" variant="ghost">
                   <MoreHorizontal className="size-4" />
-                </button>
+                </Button>
               </div>
               <div className="px-5 pt-4 sm:px-6">
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="font-heading text-lg font-semibold tracking-tight text-[#26332a]">{agent.name}</h2>
-                  <span className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${toneStyles[agent.tone]}`}>{agent.tone}</span>
+                  <Badge className={`h-auto rounded-full border-0 px-2.5 py-1 text-[10px] font-medium ${toneStyles[agent.tone]}`}>{agent.tone}</Badge>
                 </div>
                 <p className="mt-1.5 min-h-5 text-xs text-[#879087]">{agent.description || "A helpful AI support agent."}</p>
                 <div className="mt-5 space-y-3 border-t border-[#eff1ec] pt-4">
@@ -89,23 +91,27 @@ export default function AgentsPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] text-[#969f95]">Created {agent.createdAt}</span>
-                    <span className={`inline-flex items-center gap-1.5 text-[10px] font-medium ${agent.status === "Active" ? "text-[#64854a]" : "text-[#a47b45]"}`}>
+                    <Badge className={`h-auto gap-1.5 border-0 bg-transparent px-0 text-[10px] font-medium ${agent.status === "Active" ? "text-[#64854a]" : "text-[#a47b45]"}`}>
                       <span className={`size-1.5 rounded-full ${agent.status === "Active" ? "bg-[#8ab45e]" : "bg-[#e0b165]"}`} />
                       {agent.status}
-                    </span>
+                    </Badge>
                   </div>
                 </div>
               </div>
               <div className="mt-5 flex items-center gap-2 border-t border-[#eff1ec] bg-[#fbfcfa] px-5 py-3.5 sm:px-6">
-                <Link className="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#17221b] px-3 text-[11px] font-semibold text-white transition hover:bg-[#304536]" href={`/dashboard/agents/${agent.id}`}>
+                <Button asChild className="h-8 flex-1 rounded-lg bg-[#17221b] px-3 text-[11px] font-semibold text-white hover:bg-[#304536]" size="sm">
+                  <Link href={`/dashboard/agents/${agent.id}`}>
                   Manage <ArrowUpRight aria-hidden="true" className="size-3.5" />
-                </Link>
-                <Link className="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#e2e7de] bg-white px-3 text-[11px] font-semibold text-[#536052] transition hover:bg-[#f5f7f3]" href={`/dashboard/agents/${agent.id}?test=1`}>
-                  <Sparkles aria-hidden="true" className="size-3.5" /> Test
-                </Link>
-                <button aria-label={`Delete ${agent.name}`} className="inline-flex size-8 items-center justify-center rounded-lg border border-[#eceee9] bg-white text-[#9b7771] transition hover:border-[#e7cfc9] hover:bg-[#fff8f6] hover:text-[#ab5748]" onClick={() => removeAgent(agent)} type="button">
+                  </Link>
+                </Button>
+                <Button asChild className="h-8 flex-1 rounded-lg border border-[#e2e7de] bg-white px-3 text-[11px] font-semibold text-[#536052] hover:bg-[#f5f7f3] hover:text-[#536052]" size="sm" variant="outline">
+                  <Link href={`/dashboard/agents/${agent.id}?test=1`}>
+                    <Sparkles aria-hidden="true" className="size-3.5" /> Test
+                  </Link>
+                </Button>
+                <Button aria-label={`Delete ${agent.name}`} className="size-8 rounded-lg border border-[#eceee9] bg-white text-[#9b7771] hover:border-[#e7cfc9] hover:bg-[#fff8f6] hover:text-[#ab5748]" onClick={() => removeAgent(agent)} size="icon-sm" type="button" variant="outline">
                   <Trash2 aria-hidden="true" className="size-3.5" />
-                </button>
+                </Button>
               </div>
             </Panel>
           ))}

@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Badge } from "@repo/ui/components/badge";
+import { Button } from "@repo/ui/components/button";
 import {
   Activity,
   Bot,
@@ -50,7 +52,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/35">
           Workspace
         </p>
-        <button className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-left transition hover:bg-white/[0.08]">
+        <Button className="h-auto w-full justify-start gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-left text-white hover:bg-white/[0.08] hover:text-white" variant="outline">
           <span className="flex size-8 items-center justify-center rounded-lg bg-[#c5ef70]/15 text-xs font-semibold text-[#c5ef70]">
             AC
           </span>
@@ -63,7 +65,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             </span>
           </span>
           <ChevronDown aria-hidden="true" className="size-4 text-white/40" />
-        </button>
+        </Button>
       </div>
 
       <nav aria-label="Dashboard navigation" className="mt-8 space-y-1 px-2">
@@ -148,14 +150,16 @@ export function DashboardShell({ children }: { children: ReactNode }) {
       <div className="min-h-screen lg:pl-[248px]">
         <header className="dashboard-header sticky top-0 z-20 flex h-[68px] items-center justify-between border-b border-[#e8ebe3] bg-[#f7f8f4]/90 px-5 backdrop-blur-md sm:px-8">
           <div className="flex items-center gap-3">
-            <button
+            <Button
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
-              className="inline-flex size-9 items-center justify-center rounded-lg border border-[#e2e6de] bg-white text-[#455047] lg:hidden"
+              className="size-9 rounded-lg border border-[#e2e6de] bg-white text-[#455047] lg:hidden"
               onClick={() => setMobileOpen(!mobileOpen)}
+              size="icon"
               type="button"
+              variant="outline"
             >
               {mobileOpen ? <X className="size-4" /> : <Menu className="size-4" />}
-            </button>
+            </Button>
             <div className="hidden items-center gap-2 text-xs text-[#8a9489] sm:flex">
               <span>Workspace</span>
               <span aria-hidden="true">/</span>
@@ -167,22 +171,25 @@ export function DashboardShell({ children }: { children: ReactNode }) {
           </div>
 
           <div className="flex items-center gap-3">
-            <button
+            <Button
               aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
               aria-pressed={darkMode}
-              className="flex size-9 items-center justify-center rounded-full border border-[#e5e8e1] bg-white text-[#657166] transition hover:border-[#cad6bf] hover:text-[#3d503f]"
+              className="size-9 rounded-full border border-[#e5e8e1] bg-white text-[#657166] transition hover:border-[#cad6bf] hover:text-[#3d503f]"
               onClick={() => setDarkMode(!darkMode)}
+              size="icon"
               type="button"
+              variant="outline"
             >
               {darkMode ? <Sun aria-hidden="true" className="size-4" /> : <Moon aria-hidden="true" className="size-4" />}
-            </button>
-            <span className="hidden items-center gap-1.5 rounded-full border border-[#e4e9df] bg-white px-2.5 py-1.5 text-[11px] font-medium text-[#637064] sm:inline-flex">
+            </Button>
+            <Badge className="hidden h-auto items-center gap-1.5 rounded-full border-[#e4e9df] bg-white px-2.5 py-1.5 text-[11px] font-medium text-[#637064] sm:inline-flex">
               <span className="size-1.5 rounded-full bg-[#8db552]" />
               All systems operational
-            </span>
-            <button
+            </Badge>
+            <Button
               aria-label="Open account menu"
-              className="flex items-center gap-2 rounded-full border border-[#e5e8e1] bg-white p-1 pr-2.5 transition hover:border-[#cad6bf]"
+              className="h-auto items-center gap-2 rounded-full border border-[#e5e8e1] bg-white p-1 pr-2.5 transition hover:border-[#cad6bf]"
+              variant="outline"
             >
               <span className="flex size-8 items-center justify-center rounded-full bg-[#dce9d0] text-[11px] font-semibold text-[#42613b]">
                 JD
@@ -191,7 +198,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                 Jordan Davis
               </span>
               <ChevronDown aria-hidden="true" className="hidden size-3.5 text-[#899286] sm:block" />
-            </button>
+            </Button>
           </div>
         </header>
 

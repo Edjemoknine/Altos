@@ -38,6 +38,7 @@
 [data-dashboard-theme="dark"] .dashboard-panel {
   border-color: #2a382d;
   background-color: #162119;
+  --tw-ring-color: #2a382d;
 }
 
 [data-dashboard-theme="dark"] .dashboard-panel [class*="bg-white"],

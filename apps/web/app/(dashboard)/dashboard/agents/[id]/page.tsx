@@ -2,6 +2,11 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { Badge } from "@repo/ui/components/badge";
+import { Button } from "@repo/ui/components/button";
+import { Input } from "@repo/ui/components/input";
+import { NativeSelect, NativeSelectOption } from "@repo/ui/components/native-select";
+import { Textarea } from "@repo/ui/components/textarea";
 import { useParams } from "next/navigation";
 import {
   ArrowLeft,
@@ -167,18 +172,18 @@ export default function AgentDetailPage() {
         title={initialAgent.name}
         description={`${initialAgent.description} · ${initialAgent.website}`}
         action={
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#eff5e9] px-2.5 py-1.5 text-[10px] font-semibold text-[#67834d]">
+          <Badge className="h-auto gap-1.5 rounded-full border-0 bg-[#eff5e9] px-2.5 py-1.5 text-[10px] font-semibold text-[#67834d]">
             <span className="size-1.5 rounded-full bg-[#8ab45e]" /> {initialAgent.status}
-          </span>
+          </Badge>
         }
       />
 
       <div className="mb-5 overflow-x-auto border-b border-[#e3e8df]">
         <div aria-label="Agent settings" className="flex min-w-max gap-6" role="tablist">
           {tabs.map((tab) => (
-            <button
+            <Button
               aria-selected={activeTab === tab.id}
-              className={`border-b-2 px-0.5 pb-3 text-xs font-semibold transition ${
+              className={`h-auto rounded-none border-b-2 bg-transparent px-0.5 pb-3 pt-1 text-xs font-semibold transition hover:bg-transparent ${
                 activeTab === tab.id
                   ? "border-[#6e914c] text-[#456337]"
                   : "border-transparent text-[#849084] hover:text-[#4f5e51]"
@@ -187,9 +192,10 @@ export default function AgentDetailPage() {
               onClick={() => setActiveTab(tab.id)}
               role="tab"
               type="button"
+              variant="ghost"
             >
               {tab.label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -203,22 +209,22 @@ export default function AgentDetailPage() {
           <form className="space-y-5 p-5 sm:p-6" onSubmit={saveConfiguration}>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field id="detail-name" label="Agent name">
-                <input className={inputClassName} defaultValue={initialAgent.name} id="detail-name" required />
+                <Input className={inputClassName} defaultValue={initialAgent.name} id="detail-name" required />
               </Field>
               <Field id="detail-tone" label="Conversation tone">
-                <select className={inputClassName} id="detail-tone" onChange={(event) => setTone(event.target.value as AgentTone)} value={tone}>
-                  <option>Professional</option><option>Friendly</option><option>Casual</option><option>Empathic</option>
-                </select>
+                <NativeSelect className="w-full" id="detail-tone" onChange={(event) => setTone(event.target.value as AgentTone)} value={tone}>
+                  <NativeSelectOption>Professional</NativeSelectOption><NativeSelectOption>Friendly</NativeSelectOption><NativeSelectOption>Casual</NativeSelectOption><NativeSelectOption>Empathic</NativeSelectOption>
+                </NativeSelect>
               </Field>
             </div>
             <Field id="detail-description" label="Description">
-              <input className={inputClassName} defaultValue={initialAgent.description} id="detail-description" />
+              <Input className={inputClassName} defaultValue={initialAgent.description} id="detail-description" />
             </Field>
             <Field id="detail-website" label="Website" hint="Changing your website does not automatically refresh the knowledge base.">
-              <input className={inputClassName} defaultValue={`https://${initialAgent.website}`} id="detail-website" type="url" />
+              <Input className={inputClassName} defaultValue={`https://${initialAgent.website}`} id="detail-website" type="url" />
             </Field>
             <Field id="system-prompt" label="Base system prompt" hint="Describe the role, voice, and boundaries for your assistant.">
-              <textarea className={`${textareaClassName} min-h-40 resize-y`} defaultValue={`You are ${initialAgent.name}, a ${tone.toLowerCase()} customer support assistant for Acme. Use the provided knowledge base to answer clearly and accurately. If you don't know an answer, say so and offer to connect the customer with a person.`} id="system-prompt" rows={6} />
+              <Textarea className={`${textareaClassName} min-h-40 resize-y`} defaultValue={`You are ${initialAgent.name}, a ${tone.toLowerCase()} customer support assistant for Acme. Use the provided knowledge base to answer clearly and accurately. If you don't know an answer, say so and offer to connect the customer with a person.`} id="system-prompt" rows={6} />
             </Field>
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#eff1ec] pt-4">
               <p aria-live="polite" className="text-xs text-[#5f7e49]">{savedNotice}</p>
@@ -238,7 +244,7 @@ export default function AgentDetailPage() {
             </div>
             <form className="space-y-4 p-5 sm:p-6" onSubmit={startScraping}>
               <Field id="scrape-url" label="Website URL">
-                <input className={inputClassName} id="scrape-url" onChange={(event) => setScrapeUrl(event.target.value)} placeholder="https://docs.yourcompany.com" type="url" value={scrapeUrl} />
+                <Input className={inputClassName} id="scrape-url" onChange={(event) => setScrapeUrl(event.target.value)} placeholder="https://docs.yourcompany.com" type="url" value={scrapeUrl} />
               </Field>
               <PrimaryButton type="submit"><Play aria-hidden="true" className="size-3.5" /> Start scraping</PrimaryButton>
               {scrapeStatus && <p aria-live="polite" className="text-xs text-[#63804b]">{scrapeStatus}</p>}
@@ -252,7 +258,7 @@ export default function AgentDetailPage() {
             </div>
             <div className="p-5 sm:p-6">
               <label className="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-[#dce3d7] bg-[#fbfcfa] px-4 text-center transition hover:border-[#a8be91] hover:bg-[#f8faf5]">
-                <input accept=".txt,text/plain" className="sr-only" onChange={addDocument} type="file" />
+                <Input accept=".txt,text/plain" className="sr-only" onChange={addDocument} type="file" />
                 <span className="flex size-9 items-center justify-center rounded-xl bg-white text-[#7c8c73] shadow-sm"><Upload className="size-4" /></span>
                 <span className="mt-2 text-xs font-semibold text-[#536052]">Choose a .txt file</span>
                 <span className="mt-1 text-[10px] text-[#9aa398]">Plain text documents only</span>
@@ -289,7 +295,7 @@ export default function AgentDetailPage() {
               <>
                 <Field id="generated-key" label="Generated key" hint="This demo key is generated in your browser and is not connected to a live API.">
                   <div className="flex gap-2">
-                    <input className={`${inputClassName} font-mono text-xs`} id="generated-key" readOnly value={showKey ? apiKey : `${apiKey.slice(0, 11)}${"•".repeat(20)}`} />
+                    <Input className={`${inputClassName} font-mono text-xs`} id="generated-key" readOnly value={showKey ? apiKey : `${apiKey.slice(0, 11)}${"•".repeat(20)}`} />
                     <SecondaryButton onClick={() => setShowKey(!showKey)} type="button">{showKey ? "Hide" : "Reveal"}</SecondaryButton>
                     <SecondaryButton aria-label="Copy API key" onClick={() => copyText(apiKey, "API key")} type="button"><Copy className="size-3.5" /></SecondaryButton>
                   </div>
@@ -360,12 +366,12 @@ export default function AgentDetailPage() {
           )}
           <div className="border-t border-[#eff1ec] p-4 sm:p-5">
             <form className="flex gap-2" onSubmit={sendMessage}>
-              <input aria-label="Message your agent" className={`${inputClassName} flex-1`} onChange={(event) => setChatInput(event.target.value)} placeholder="Ask your agent a question…" value={chatInput} />
-              <button aria-label={isRecording ? "Stop voice test" : "Start voice test"} className={`flex size-10 shrink-0 items-center justify-center rounded-xl border transition ${
+              <Input aria-label="Message your agent" className={`${inputClassName} flex-1`} onChange={(event) => setChatInput(event.target.value)} placeholder="Ask your agent a question…" value={chatInput} />
+              <Button aria-label={isRecording ? "Stop voice test" : "Start voice test"} className={`size-10 shrink-0 rounded-xl border transition ${
                 isRecording ? "border-[#f0d4cd] bg-[#fff3f0] text-[#b65e50]" : "border-[#e2e7de] bg-white text-[#63775b] hover:bg-[#f5f8f1]"
-              }`} onClick={toggleRecording} type="button">
+              }`} onClick={toggleRecording} size="icon" type="button" variant="outline">
                 {isRecording ? <AudioLines className="size-4" /> : <Mic className="size-4" />}
-              </button>
+              </Button>
               <PrimaryButton aria-label="Send message" className="size-10 px-0" disabled={!chatInput.trim()} type="submit"><span aria-hidden="true">↑</span></PrimaryButton>
             </form>
             <div className="mt-3 flex items-center justify-between text-[10px] text-[#a0a89e]">

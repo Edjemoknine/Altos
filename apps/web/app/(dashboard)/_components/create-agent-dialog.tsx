@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { X } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@repo/ui/components/dialog";
+import { Input } from "@repo/ui/components/input";
+import { NativeSelect, NativeSelectOption } from "@repo/ui/components/native-select";
+import { Textarea } from "@repo/ui/components/textarea";
 import type { Agent, AgentTone } from "./mock-data";
 import { Field, PrimaryButton, SecondaryButton, inputClassName, textareaClassName } from "./dashboard-ui";
 
@@ -15,8 +18,6 @@ export function CreateAgentDialog({
   onCreate: (agent: Agent) => void;
 }) {
   const [notice, setNotice] = useState("");
-
-  if (!open) return null;
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -47,60 +48,40 @@ export function CreateAgentDialog({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#101b15]/45 p-4 backdrop-blur-[2px]"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      <section
-        aria-labelledby="create-agent-title"
-        aria-modal="true"
-        className="max-h-[92vh] w-full max-w-[560px] overflow-y-auto rounded-2xl border border-[#e7eae3] bg-[#fdfefc] shadow-2xl"
-        role="dialog"
-      >
-        <div className="flex items-start justify-between border-b border-[#eff1ec] px-6 py-5">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#778675]">
-              New assistant
-            </p>
-            <h2 id="create-agent-title" className="mt-1 font-heading text-xl font-semibold text-[#202c23]">
-              Create an agent
-            </h2>
-            <p className="mt-1 text-xs text-[#849084]">
-              Set the basics. You can fine-tune everything later.
-            </p>
-          </div>
-          <button
-            aria-label="Close dialog"
-            className="flex size-8 items-center justify-center rounded-lg text-[#7e887e] transition hover:bg-[#f0f3ed] hover:text-[#26342a]"
-            onClick={onClose}
-            type="button"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
+    <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
+      <DialogContent className="max-h-[92vh] max-w-[560px] gap-0 overflow-y-auto rounded-2xl border border-[#e7eae3] bg-[#fdfefc] p-0 text-[#17221b] shadow-2xl">
+        <DialogHeader className="border-b border-[#eff1ec] px-6 py-5 text-left">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#778675]">
+            New assistant
+          </p>
+          <DialogTitle className="mt-1 font-heading text-xl font-semibold text-[#202c23]">
+            Create an agent
+          </DialogTitle>
+          <DialogDescription className="text-xs text-[#849084]">
+            Set the basics. You can fine-tune everything later.
+          </DialogDescription>
+        </DialogHeader>
         <form className="space-y-4 p-6" onSubmit={submit}>
           <Field id="agent-name" label="Agent name">
-            <input autoFocus className={inputClassName} id="agent-name" name="name" placeholder="e.g. Support Assistant" required />
+            <Input autoFocus className={inputClassName} id="agent-name" name="name" placeholder="e.g. Support Assistant" required />
           </Field>
           <Field id="agent-description" label="Description">
-            <input className={inputClassName} id="agent-description" name="description" placeholder="What will this agent help with?" />
+            <Input className={inputClassName} id="agent-description" name="description" placeholder="What will this agent help with?" />
           </Field>
           <Field id="agent-website" label="Target website URL" hint="We’ll use this as the starting point for your knowledge base.">
-            <input className={inputClassName} id="agent-website" name="website" placeholder="https://yourcompany.com" required type="url" />
+            <Input className={inputClassName} id="agent-website" name="website" placeholder="https://yourcompany.com" required type="url" />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field id="agent-tone" label="Tone">
-              <select className={inputClassName} defaultValue="Friendly" id="agent-tone" name="tone">
-                <option>Professional</option>
-                <option>Friendly</option>
-                <option>Casual</option>
-                <option>Empathic</option>
-              </select>
+              <NativeSelect className="w-full" defaultValue="Friendly" id="agent-tone" name="tone">
+                <NativeSelectOption>Professional</NativeSelectOption>
+                <NativeSelectOption>Friendly</NativeSelectOption>
+                <NativeSelectOption>Casual</NativeSelectOption>
+                <NativeSelectOption>Empathic</NativeSelectOption>
+              </NativeSelect>
             </Field>
             <Field id="agent-prompt" label="Base system prompt">
-              <textarea className={`${textareaClassName} min-h-[42px] resize-y`} id="agent-prompt" name="prompt" placeholder="You are a helpful support agent..." rows={2} />
+              <Textarea className={`${textareaClassName} min-h-[42px] resize-y`} id="agent-prompt" name="prompt" placeholder="You are a helpful support agent..." rows={2} />
             </Field>
           </div>
           {notice && <p aria-live="polite" className="text-xs text-[#b75d47]">{notice}</p>}
@@ -109,7 +90,7 @@ export function CreateAgentDialog({
             <PrimaryButton type="submit">Create agent <span aria-hidden="true">→</span></PrimaryButton>
           </div>
         </form>
-      </section>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

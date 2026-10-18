@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import { ArrowDownRight, ArrowUpRight, Plus } from "lucide-react";
+import { Button } from "@repo/ui/components/button";
+import { Card } from "@repo/ui/components/card";
 
 export function PageHeading({
   eyebrow,
@@ -42,11 +44,11 @@ export function Panel({
   className?: string;
 }) {
   return (
-    <section
-      className={`dashboard-panel rounded-2xl border border-[#e7eae3] bg-white shadow-[0_2px_8px_rgba(23,34,27,0.025)] ${className}`}
+    <Card
+      className={`dashboard-panel gap-0 rounded-2xl bg-white py-0 text-[#17221b] shadow-[0_2px_8px_rgba(23,34,27,0.025)] ring-1 ring-[#e7eae3] ${className}`}
     >
       {children}
-    </section>
+    </Card>
   );
 }
 
@@ -78,12 +80,12 @@ export function PrimaryButton({
   ...props
 }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
-    <button
-      className={`inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#17221b] px-4 text-sm font-semibold text-white transition hover:bg-[#304536] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8aaa55] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+    <Button
+      className={`h-10 rounded-xl bg-[#17221b] px-4 text-sm font-semibold text-white transition hover:bg-[#304536] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8aaa55] ${className}`}
       {...props}
     >
       {children}
-    </button>
+    </Button>
   );
 }
 
@@ -93,12 +95,13 @@ export function SecondaryButton({
   ...props
 }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
-    <button
-      className={`inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-[#e3e8df] bg-white px-3.5 text-xs font-semibold text-[#455047] transition hover:border-[#cbd7c1] hover:bg-[#fafbf8] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8aaa55] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+    <Button
+      className={`h-9 rounded-xl border border-[#e3e8df] bg-white px-3.5 text-xs font-semibold text-[#455047] transition hover:border-[#cbd7c1] hover:bg-[#fafbf8] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8aaa55] ${className}`}
+      variant="outline"
       {...props}
     >
       {children}
-    </button>
+    </Button>
   );
 }
 

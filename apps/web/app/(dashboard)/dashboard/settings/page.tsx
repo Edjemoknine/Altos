@@ -1,6 +1,8 @@
 "use client";
 
 import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { Badge } from "@repo/ui/components/badge";
+import { Input } from "@repo/ui/components/input";
 import { BadgeCheck, Check, CreditCard, LockKeyhole, Mail, Upload, UserRound } from "lucide-react";
 import {
   Field,
@@ -68,7 +70,7 @@ export default function SettingsPage() {
                   JD
                 </span>
                 <div>
-                  <input accept="image/*" className="sr-only" onChange={selectAvatar} ref={avatarInput} type="file" />
+                  <Input accept="image/*" className="sr-only" onChange={selectAvatar} ref={avatarInput} type="file" />
                   <SecondaryButton onClick={() => avatarInput.current?.click()} type="button">
                     <Upload aria-hidden="true" className="size-3.5" /> Upload avatar
                   </SecondaryButton>
@@ -77,14 +79,14 @@ export default function SettingsPage() {
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field id="profile-name" label="Full name">
-                  <input autoComplete="name" className={inputClassName} defaultValue="Jordan Davis" id="profile-name" name="name" required />
+                  <Input autoComplete="name" className={inputClassName} defaultValue="Jordan Davis" id="profile-name" name="name" required />
                 </Field>
                 <Field id="profile-email" label="Email address">
                   <div className="relative">
-                    <input autoComplete="email" className={`${inputClassName} pr-28`} defaultValue="jordan@acme.com" id="profile-email" name="email" required type="email" />
-                    <span className="absolute right-2 top-1/2 inline-flex -translate-y-1/2 items-center gap-1 rounded-full bg-[#eff5e9] px-2 py-1 text-[9px] font-semibold text-[#66834e]">
+                    <Input autoComplete="email" className={`${inputClassName} pr-28`} defaultValue="jordan@acme.com" id="profile-email" name="email" required type="email" />
+                    <Badge className="absolute right-2 top-1/2 h-auto -translate-y-1/2 gap-1 rounded-full border-0 bg-[#eff5e9] px-2 py-1 text-[9px] font-semibold text-[#66834e]">
                       <BadgeCheck aria-hidden="true" className="size-3" /> Verified
-                    </span>
+                    </Badge>
                   </div>
                 </Field>
               </div>
@@ -99,14 +101,14 @@ export default function SettingsPage() {
             <PanelHeading title="Security" description="Choose a strong password to keep your account secure." />
             <form className="space-y-4 p-5 sm:p-6" onSubmit={changePassword}>
               <Field id="current-password" label="Current password">
-                <input autoComplete="current-password" className={inputClassName} id="current-password" name="current-password" placeholder="Enter current password" required type="password" />
+                <Input autoComplete="current-password" className={inputClassName} id="current-password" name="current-password" placeholder="Enter current password" required type="password" />
               </Field>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field id="new-password" label="New password" hint="At least 8 characters.">
-                  <input autoComplete="new-password" className={inputClassName} id="new-password" minLength={8} name="new-password" placeholder="New password" required type="password" />
+                  <Input autoComplete="new-password" className={inputClassName} id="new-password" minLength={8} name="new-password" placeholder="New password" required type="password" />
                 </Field>
                 <Field id="confirm-password" label="Confirm new password">
-                  <input autoComplete="new-password" className={inputClassName} id="confirm-password" minLength={8} name="confirm-password" placeholder="Repeat new password" required type="password" />
+                  <Input autoComplete="new-password" className={inputClassName} id="confirm-password" minLength={8} name="confirm-password" placeholder="Repeat new password" required type="password" />
                 </Field>
               </div>
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#eff1ec] pt-4">
@@ -123,9 +125,9 @@ export default function SettingsPage() {
             <div className="p-5 sm:p-6">
               <div className="flex items-start justify-between">
                 <div>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#eff5e9] px-2.5 py-1 text-[10px] font-semibold text-[#64804b]">
+                  <Badge className="h-auto gap-1.5 rounded-full border-0 bg-[#eff5e9] px-2.5 py-1 text-[10px] font-semibold text-[#64804b]">
                     <span className="size-1.5 rounded-full bg-[#8ab45e]" /> Current plan
-                  </span>
+                  </Badge>
                   <h2 className="mt-3 font-heading text-2xl font-semibold text-[#26332a]">Free</h2>
                   <p className="mt-1 text-xs text-[#849084]">For trying out Altos</p>
                 </div>
