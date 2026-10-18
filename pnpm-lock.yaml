@@ -69,6 +69,9 @@ importers:
       hono:
         specifier: ^4.13.13
         version: 4.13.13
+      lucide-react:
+        specifier: ^1.55.0
+        version: 1.55.0(@types/react@19.2.18)(react@19.2.8)
       next:
         specifier: latest
         version: 16.4.0(@babel/core@8.0.1)(@types/node@26.4.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
