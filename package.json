@@ -11,8 +11,8 @@
     "lint": "turbo lint",
     "check-types": "turbo run check-types",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "db:generate": "npm run db:generate --workspace=@repo/database",
-    "db:migrate": "npm run db:migrate --workspace=@repo/database",
+    "db:generate": "pnpm dlx auth@latest generate",
+    "db:migrate": "pnpm dlx auth@latest migrate",
     "db:studio": "npm run db:studio --workspace=@repo/database"
   },
   "devDependencies": {
@@ -20,7 +20,7 @@
     "turbo": "^2.11.7",
     "typescript": "7.0.2"
   },
-  "packageManager": "pnpm@11.25.0",
+  "packageManager": "pnpm@12.18.0",
   "engines": {
     "node": ">=24"
   }
