@@ -1,5 +1,5 @@
 import { createMiddleware } from "hono/factory";
-import { auth } from "./auth.js";
+import { auth } from "../auth/auth.ts";
 
 export const authMiddleware = createMiddleware(async (c, next) => {
   const session = await auth.api.getSession({
