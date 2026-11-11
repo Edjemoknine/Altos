@@ -4,13 +4,13 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/index.js",
     "check-types": "tsc --noEmit",
      "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "auth:generate": "pnpm dlx auth@latest generate --config src/lib/auth.ts --output src/db/auth-schema.ts"
+    "auth:generate": "pnpm dlx auth@latest generate --config src/auth/auth.ts --output src/db/auth-schema.ts"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "^1.7.18",
