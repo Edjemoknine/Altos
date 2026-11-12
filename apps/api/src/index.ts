@@ -28,5 +28,6 @@ app.get("/", (c) => {
 // Routes
 app.route("/auth", authRoutes);
 app.route("/users", userRoutes);
+export type AppType = typeof app;
 
 export default app;

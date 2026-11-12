@@ -1,5 +1,10 @@
 import { hc } from "hono/client";
-import type { AppType } from "api"; // Imports types directly from your Hono app workspace!
+import type { AppType } from "@repo/api";
+
 import { API_BASE_URL } from "./api-url";
 
-export const client = hc<AppType>(API_BASE_URL);
+export const client = hc<AppType>(API_BASE_URL, {
+  init: {
+    credentials: "include",
+  },
+});
