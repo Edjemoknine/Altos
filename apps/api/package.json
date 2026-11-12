@@ -3,7 +3,7 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-   "exports": {
+  "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
@@ -15,7 +15,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "check-types": "tsc --noEmit",
-     "db:generate": "drizzle-kit generate",
+    "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "auth:generate": "pnpm dlx auth@latest generate --config src/auth/auth.ts --output src/db/auth-schema.ts"
   },
@@ -35,6 +35,6 @@
     "@types/node": "^26.1.1",
     "drizzle-kit": "1.0.0-rc.5",
     "tsx": "^4.23.0",
-    "typescript": "^7.0.2"
+    "typescript": "~5.9.3"
   }
 }
