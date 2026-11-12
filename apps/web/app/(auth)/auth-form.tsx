@@ -1,20 +1,46 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import type { FormEvent } from "react";
+import {
+  useSignInMutation,
+  useSignUpMutation,
+} from "@/auth/auth-mutations";
 
 type AuthFormProps = {
   mode: "sign-in" | "sign-up";
 };
 
 export function AuthForm({ mode }: AuthFormProps) {
-  const [notice, setNotice] = useState("");
+  const router = useRouter();
+  const signInMutation = useSignInMutation();
+  const signUpMutation = useSignUpMutation();
   const isSignUp = mode === "sign-up";
+  const activeMutation = isSignUp ? signUpMutation : signInMutation;
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setNotice(
-      "Authentication is not connected yet. Your details have not been sent.",
-    );
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("email") ?? "");
+    const password = String(formData.get("password") ?? "");
+    const onSuccess = () => {
+      router.replace("/dashboard");
+      router.refresh();
+    };
+
+    if (isSignUp) {
+      signUpMutation.mutate(
+        {
+          name: String(formData.get("name") ?? ""),
+          email,
+          password,
+        },
+        { onSuccess },
+      );
+      return;
+    }
+
+    signInMutation.mutate({ email, password });
   }
 
   return (
@@ -81,17 +107,28 @@ export function AuthForm({ mode }: AuthFormProps) {
       </div>
 
       <button
-        className="flex h-12 w-full items-center justify-center rounded-xl bg-[#17221b] px-5 text-sm font-semibold text-white transition hover:bg-[#304536] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#547833]"
+        className="flex h-12 w-full items-center justify-center rounded-xl bg-[#17221b] px-5 text-sm font-semibold text-white transition hover:bg-[#304536] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#547833] disabled:cursor-not-allowed disabled:opacity-60"
+        disabled={activeMutation.isPending}
         type="submit"
       >
-        {isSignUp ? "Create account" : "Sign in"}
+        {activeMutation.isPending
+          ? isSignUp
+            ? "Creating account..."
+            : "Signing in..."
+          : isSignUp
+            ? "Create account"
+            : "Sign in"}
         <span aria-hidden="true" className="ml-2 text-[#c5ef70]">
           →
         </span>
       </button>
 
-      <p aria-live="polite" className="min-h-5 text-center text-sm text-[#657067]">
-        {notice}
+      <p
+        aria-live="assertive"
+        className="min-h-5 text-center text-sm text-red-700"
+        role="alert"
+      >
+        {activeMutation.error?.message ?? ""}
       </p>
     </form>
   );

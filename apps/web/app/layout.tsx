@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { DM_Sans, Outfit, IBM_Plex_Sans, Source_Sans_3 } from "next/font/google";
 import { cn } from "@repo/ui/lib/utils";
+import { Providers } from "./providers";
 
 const sourceSans3Heading = Source_Sans_3({subsets:['latin'],variable:'--font-heading'});
 
@@ -30,7 +31,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={cn("font-sans", ibmPlexSans.variable, sourceSans3Heading.variable)}>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Badge } from "@repo/ui/components/badge";
 import { Button } from "@repo/ui/components/button";
+import { authClient } from "@/auth/auth-client";
+import { useSignOutMutation } from "@/auth/auth-mutations";
 import {
   Activity,
   Bot,
@@ -26,7 +28,23 @@ const navigation = [
   { label: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+type SidebarContentProps = {
+  onNavigate?: () => void;
+  userInitials: string;
+  userName: string;
+  onSignOut: () => void;
+  isSigningOut: boolean;
+  signOutError?: string;
+};
+
+function SidebarContent({
+  onNavigate,
+  userInitials,
+  userName,
+  onSignOut,
+  isSigningOut,
+  signOutError,
+}: SidebarContentProps) {
   const pathname = usePathname();
 
   return (
@@ -114,21 +132,45 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             Explore plans <span aria-hidden="true" className="ml-1">→</span>
           </Link>
         </div>
-        <Link
-          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-white/55 transition hover:bg-white/[0.06] hover:text-white"
-          href="/sign-in"
+        <button
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-white/55 transition hover:bg-white/[0.06] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={isSigningOut}
+          onClick={onSignOut}
+          type="button"
         >
           <Command aria-hidden="true" className="size-[17px]" strokeWidth={1.8} />
-          Sign out
-        </Link>
+          {isSigningOut ? "Signing out..." : "Sign out"}
+        </button>
+        {signOutError && (
+          <p aria-live="assertive" className="px-3 text-xs text-red-300" role="alert">
+            {signOutError}
+          </p>
+        )}
       </div>
     </>
   );
 }
 
 export function DashboardShell({ children }: { children: ReactNode }) {
+  const router = useRouter();
+  const { data: session, isPending, error, refetch } = authClient.useSession();
+  const signOutMutation = useSignOutMutation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const userName = session?.user.name || session?.user.email || "Account";
+  const userInitials = userName
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  useEffect(() => {
+    if (!isPending && !error && !session) {
+      router.replace("/sign-in");
+    }
+  }, [error, isPending, router, session]);
 
   useEffect(() => {
     setDarkMode(window.localStorage.getItem("altos-dashboard-theme") === "dark");
@@ -138,13 +180,50 @@ export function DashboardShell({ children }: { children: ReactNode }) {
     window.localStorage.setItem("altos-dashboard-theme", darkMode ? "dark" : "light");
   }, [darkMode]);
 
+  if (isPending) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#f7f8f4] text-sm text-[#657067]">
+        Loading your account...
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#f7f8f4] text-sm text-[#657067]">
+        <p role="alert">Unable to load your account. Please try again.</p>
+        <Button onClick={() => void refetch()} type="button" variant="outline">
+          Retry
+        </Button>
+      </main>
+    );
+  }
+
+  if (!session) {
+    return null;
+  }
+
+  const sidebarProps = {
+    userInitials,
+    userName,
+    onSignOut: () =>
+      signOutMutation.mutate(undefined, {
+        onSuccess: () => {
+          router.replace("/sign-in");
+          router.refresh();
+        },
+      }),
+    isSigningOut: signOutMutation.isPending,
+    signOutError: signOutMutation.error?.message,
+  };
+
   return (
     <div
       className="min-h-screen bg-[#f7f8f4] text-[#17221b]"
       data-dashboard-theme={darkMode ? "dark" : "light"}
     >
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-[248px] flex-col border-r border-white/5 bg-[#111b15] px-3 py-5 lg:flex">
-        <SidebarContent />
+        <SidebarContent {...sidebarProps} />
       </aside>
 
       <div className="min-h-screen lg:pl-[248px]">
@@ -192,10 +271,10 @@ export function DashboardShell({ children }: { children: ReactNode }) {
               variant="outline"
             >
               <span className="flex size-8 items-center justify-center rounded-full bg-[#dce9d0] text-[11px] font-semibold text-[#42613b]">
-                JD
+                {userInitials}
               </span>
               <span className="hidden text-xs font-medium text-[#344237] sm:block">
-                Jordan Davis
+                {userName}
               </span>
               <ChevronDown aria-hidden="true" className="hidden size-3.5 text-[#899286] sm:block" />
             </Button>
@@ -215,7 +294,10 @@ export function DashboardShell({ children }: { children: ReactNode }) {
             onClick={() => setMobileOpen(false)}
           />
           <aside className="fixed inset-y-0 left-0 z-40 flex w-[280px] flex-col bg-[#111b15] px-3 py-5 shadow-2xl lg:hidden">
-            <SidebarContent onNavigate={() => setMobileOpen(false)} />
+            <SidebarContent
+              {...sidebarProps}
+              onNavigate={() => setMobileOpen(false)}
+            />
           </aside>
         </>
       )}
