@@ -11,9 +11,9 @@
     "lint": "turbo lint",
     "check-types": "turbo run check-types",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-   "db:generate": "turbo run db:generate --filter=api",
-    "db:migrate": "turbo run db:migrate --filter=api",
-    "auth:generate": "turbo run auth:generate --filter=api"
+    "db:generate": "turbo run db:generate --filter=@repo/api",
+    "db:migrate": "turbo run db:migrate --filter=@repo/api",
+    "auth:generate": "turbo run auth:generate --filter=@repo/api"
   },
   "devDependencies": {
     "prettier": "3.9.6",
