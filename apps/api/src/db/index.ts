@@ -9,7 +9,7 @@ import {
   account,
   verification,
   relations,
-} from "./auth-schema.ts";
+} from "./schema.ts";
 
 const databaseUrl = process.env.DATABASE_URL;
 

@@ -17,7 +17,7 @@
     "check-types": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "auth:generate": "pnpm dlx auth@latest generate --config src/auth/auth.ts --output src/db/auth-schema.ts"
+    "auth:generate": "pnpm dlx auth@latest generate --config src/auth/auth.ts --output src/db/schemas/auth.ts"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "^1.7.18",

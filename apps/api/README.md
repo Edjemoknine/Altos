@@ -45,8 +45,13 @@ apps/api/
 │   ├── config/                  # Runtime configuration and environment helpers
 │   │   └── env.ts
 │   ├── db/                      # Database access and schema definitions
-│   │   ├── client.ts
-│   │   └── schema.ts
+│   │   ├── index.ts
+│   │   ├── schema.ts
+│   │   └── schemas/
+│   │       ├── auth.ts
+│   │       ├── organization.ts
+│   │       ├── member.ts
+│   │       └── agent.ts
 │   ├── middleware/              # Auth, validation, and shared request logic
 │   │   ├── auth.ts
 │   │   └── validator.ts

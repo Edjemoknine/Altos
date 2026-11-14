@@ -5,7 +5,7 @@ This is the recommended build sequence for turning the Altos idea into a product
 ## Recommended priority order
 
 1. Workspace foundation
-   - root configuration
+   - root configuration 
    - Turborepo setup
    - TypeScript configuration
    - linting and formatting
