@@ -6,9 +6,9 @@ import userRoutes from "./routes/user.routes.ts";
 
 const app = new Hono().basePath("/api");
 
-// CORS
+// CORS - apply to every route under /api
 app.use(
-  "/api/*",
+  "*",
   cors({
     origin: process.env.FRONTEND_URL!,
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -28,6 +28,7 @@ app.get("/", (c) => {
 // Routes
 app.route("/auth", authRoutes);
 app.route("/users", userRoutes);
+
 export type AppType = typeof app;
 
 export default app;
