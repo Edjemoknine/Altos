@@ -8,7 +8,7 @@ const app = new Hono().basePath("/api");
 
 // CORS
 app.use(
-  "*",
+  "/api/*",
   cors({
     origin: process.env.FRONTEND_URL!,
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
