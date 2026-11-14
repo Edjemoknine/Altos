@@ -3,6 +3,7 @@ import "dotenv/config";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter/relations-v2";
 import { authSchema, db } from "../db/index.ts";
+import { organization } from "better-auth/plugins";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -34,6 +35,11 @@ export const auth = betterAuth({
       httpOnly: true,
     },
   },
+  plugins: [
+    organization({
+      creatorRole: "owner",
+    }),
+  ],
 });
 
 export type Auth = typeof auth;

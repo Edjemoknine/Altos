@@ -2,15 +2,26 @@ import "dotenv/config";
 
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
-
 import {
   user,
   session,
   account,
   verification,
+  organization,
+  member,
+  invitation,
   relations,
 } from "./schema.ts";
 
+export const authSchema = {
+  user,
+  session,
+  account,
+  verification,
+  organization,
+  member,
+  invitation,
+};
 const databaseUrl = process.env.DATABASE_URL;
 
 if (!databaseUrl) {
@@ -18,14 +29,6 @@ if (!databaseUrl) {
 }
 
 const client = neon(databaseUrl);
-
-// Explicitly register the tables.
-export const authSchema = {
-  user,
-  session,
-  account,
-  verification,
-};
 
 export const db = drizzle({
   client,

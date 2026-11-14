@@ -1,14 +1,22 @@
 import { sql } from "drizzle-orm";
-import { check, jsonb, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
-import { organizations } from "./organization.ts";
+import {
+  check,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
+import { organization } from "./organization.ts";
 
 export const agents = pgTable(
   "agents",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    organizationId: uuid("organization_id")
+    organizationId: text("organization_id")
       .notNull()
-      .references(() => organizations.id, { onDelete: "cascade" }),
+      .references(() => organization.id, { onDelete: "cascade" }),
     name: varchar("name").notNull(),
     description: text("description").notNull(),
     instructions: text("instructions").notNull(),
@@ -25,6 +33,9 @@ export const agents = pgTable(
       .notNull(),
   },
   (table) => [
-    check("agents_status_check", sql`${table.status} in ('active', 'inactive')`),
+    check(
+      "agents_status_check",
+      sql`${table.status} in ('active', 'inactive')`,
+    ),
   ],
 );
