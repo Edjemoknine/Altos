@@ -3,6 +3,8 @@ import { cors } from "hono/cors";
 
 import authRoutes from "./routes/auth.routes.ts";
 import userRoutes from "./routes/user.routes.ts";
+import agentRoutes from "./routes/agent.routes.ts";
+import organizationRoutes from "./routes/organization.route.ts";
 
 const app = new Hono().basePath("/api");
 
@@ -28,6 +30,8 @@ app.get("/", (c) => {
 // Routes
 app.route("/auth", authRoutes);
 app.route("/users", userRoutes);
+app.route("/agents", agentRoutes);
+app.route("/organizations", organizationRoutes);
 
 export type AppType = typeof app;
 

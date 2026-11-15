@@ -2,39 +2,19 @@ import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { and, eq } from "drizzle-orm";
 
-import { auth } from "../auth/auth.ts";
 import { db } from "../db/index.ts";
 import { member } from "../db/schemas/organization.ts";
+import type { AppEnv } from "./auth.middleware.ts";
 
-type Variables = {
-  session: NonNullable<typeof auth.$Infer.Session>;
-  organizationMembership: typeof member.$inferSelect;
+export type OrganizationEnv = {
+  Variables: AppEnv["Variables"] & {
+    organizationMembership: typeof member.$inferSelect;
+  };
 };
 
-export const requireAuth = createMiddleware<{
-  Variables: Variables;
-}>(async (c, next) => {
-  const session = await auth.api.getSession({
-    headers: c.req.raw.headers,
-  });
-
-  if (!session) {
-    throw new HTTPException(401, {
-      message: "Unauthorized",
-    });
-  }
-
-  c.set("session", session);
-
-  await next();
-});
-
 export const requireOrganizationRole = (allowedRoles: string[]) =>
-  createMiddleware<{
-    Variables: Variables;
-  }>(async (c, next) => {
-    const session = c.get("session");
-
+  createMiddleware<OrganizationEnv>(async (c, next) => {
+    const user = c.get("user");
     const organizationId = c.req.param("organizationId");
 
     if (!organizationId) {
@@ -48,7 +28,7 @@ export const requireOrganizationRole = (allowedRoles: string[]) =>
       .from(member)
       .where(
         and(
-          eq(member.userId, session.user.id),
+          eq(member.userId, user.id),
           eq(member.organizationId, organizationId),
         ),
       )
@@ -60,11 +40,7 @@ export const requireOrganizationRole = (allowedRoles: string[]) =>
       });
     }
 
-    const userRoles = membership.role.split(",");
-
-    const hasPermission = allowedRoles.some((role) => userRoles.includes(role));
-
-    if (!hasPermission) {
+    if (!allowedRoles.includes(membership.role)) {
       throw new HTTPException(403, {
         message: "Insufficient organization permissions",
       });

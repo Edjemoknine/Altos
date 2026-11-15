@@ -1,35 +1,12 @@
 import { Hono } from "hono";
 
-import {
-  requireAuth,
-  requireOrganizationRole,
-} from "../middlewares/organization.middleware.ts";
+import { requireAuth } from "../middlewares/auth.middleware.ts";
+import agentRoutes from "./agent.routes.ts";
 
 const organizationRoutes = new Hono();
 
-organizationRoutes.get(
-  "/:organizationId/agents",
-  requireAuth,
-  requireOrganizationRole(["owner", "member"]),
-  async (c) => {
-    const membership = c.get("organizationMembership");
+organizationRoutes.use("*", requireAuth);
 
-    return c.json({
-      message: "Authorized",
-      organizationId: membership.organizationId,
-    });
-  },
-);
-
-organizationRoutes.post(
-  "/:organizationId/agents",
-  requireAuth,
-  requireOrganizationRole(["owner"]),
-  async (c) => {
-    return c.json({
-      message: "Agent creation authorized",
-    });
-  },
-);
+organizationRoutes.route("/:organizationId/agents", agentRoutes);
 
 export default organizationRoutes;
