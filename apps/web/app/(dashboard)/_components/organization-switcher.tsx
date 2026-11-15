@@ -39,7 +39,10 @@ export function OrganizationSwitcher({
     setSwitchingId(null);
 
     if (result.error) {
-      setError(result.error.message);
+      setError(
+        (result.error.message as any) ??
+          "Unable to switch organizations. Please try again.",
+      );
       return;
     }
 

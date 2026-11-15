@@ -38,6 +38,16 @@ export const auth = betterAuth({
   plugins: [
     organization({
       creatorRole: "owner",
+      async sendInvitationEmail(data) {
+        const inviteLink = `${process.env.FRONTEND_URL}/accept-invitation/${data.id}`;
+
+        console.log("Organization invitation:", {
+          email: data.email,
+          organization: data.organization.name,
+          inviter: data.inviter.user.name,
+          inviteLink,
+        });
+      },
     }),
   ],
 });

@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { AuthForm } from "../auth-form";
 
-export default function SignInPage() {
+export default async function SignInPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ callbackURL?: string }>;
+}) {
+  const { callbackURL } = await searchParams;
+
   return (
     <section aria-labelledby="sign-in-heading">
       <span className="inline-flex items-center gap-2 rounded-full bg-[#e8f0dd] px-3 py-1.5 text-xs font-semibold tracking-wide text-[#547833]">
@@ -17,13 +23,17 @@ export default function SignInPage() {
         Pick up where you left off and keep your support moving.
       </p>
 
-      <AuthForm mode="sign-in" />
+      <AuthForm callbackURL={callbackURL} mode="sign-in" />
 
       <p className="mt-6 text-center text-sm text-[#657067]">
         New to Altos?{" "}
         <Link
           className="font-semibold text-[#38582b] underline-offset-4 hover:underline"
-          href="/sign-up"
+          href={
+            callbackURL
+              ? `/sign-up?callbackURL=${encodeURIComponent(callbackURL)}`
+              : "/sign-up"
+          }
         >
           Create an account
         </Link>

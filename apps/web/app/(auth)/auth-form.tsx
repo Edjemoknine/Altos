@@ -9,14 +9,19 @@ import {
 
 type AuthFormProps = {
   mode: "sign-in" | "sign-up";
+  callbackURL?: string;
 };
 
-export function AuthForm({ mode }: AuthFormProps) {
+export function AuthForm({ mode, callbackURL }: AuthFormProps) {
   const router = useRouter();
   const signInMutation = useSignInMutation();
   const signUpMutation = useSignUpMutation();
   const isSignUp = mode === "sign-up";
   const activeMutation = isSignUp ? signUpMutation : signInMutation;
+  const redirectTo =
+    callbackURL?.startsWith("/") && !callbackURL.startsWith("//")
+      ? callbackURL
+      : "/dashboard";
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -24,7 +29,7 @@ export function AuthForm({ mode }: AuthFormProps) {
     const email = String(formData.get("email") ?? "");
     const password = String(formData.get("password") ?? "");
     const onSuccess = () => {
-      router.replace("/dashboard");
+      router.replace(redirectTo);
       router.refresh();
     };
 
@@ -34,13 +39,14 @@ export function AuthForm({ mode }: AuthFormProps) {
           name: String(formData.get("name") ?? ""),
           email,
           password,
+          callbackURL: redirectTo,
         },
         { onSuccess },
       );
       return;
     }
 
-    signInMutation.mutate({ email, password });
+    signInMutation.mutate({ email, password, callbackURL: redirectTo }, { onSuccess });
   }
 
   return (

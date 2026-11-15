@@ -3,6 +3,7 @@ import { authClient } from "./auth-client";
 export type SignInInput = {
   email: string;
   password: string;
+  callbackURL?: string;
 };
 
 export type SignUpInput = SignInInput & {
@@ -12,7 +13,7 @@ export type SignUpInput = SignInInput & {
 export async function signInWithEmail(input: SignInInput) {
   const { data, error } = await authClient.signIn.email({
     ...input,
-    callbackURL: "/dashboard",
+    callbackURL: input.callbackURL ?? "/dashboard",
   });
 
   if (error) {

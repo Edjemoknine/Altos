@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { AuthForm } from "../auth-form";
 
-export default function SignUpPage() {
+export default async function SignUpPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ callbackURL?: string }>;
+}) {
+  const { callbackURL } = await searchParams;
+
   return (
     <section aria-labelledby="sign-up-heading">
       <span className="inline-flex items-center gap-2 rounded-full bg-[#e8f0dd] px-3 py-1.5 text-xs font-semibold tracking-wide text-[#547833]">
@@ -17,13 +23,17 @@ export default function SignUpPage() {
         Set up your workspace and bring your AI support team to life.
       </p>
 
-      <AuthForm mode="sign-up" />
+      <AuthForm callbackURL={callbackURL} mode="sign-up" />
 
       <p className="mt-6 text-center text-sm text-[#657067]">
         Already have an account?{" "}
         <Link
           className="font-semibold text-[#38582b] underline-offset-4 hover:underline"
-          href="/sign-in"
+          href={
+            callbackURL
+              ? `/sign-in?callbackURL=${encodeURIComponent(callbackURL)}`
+              : "/sign-in"
+          }
         >
           Sign in
         </Link>
