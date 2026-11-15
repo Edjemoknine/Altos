@@ -9,6 +9,7 @@ import { useSignOutMutation } from "@/auth/auth-mutations";
 import {
   Activity,
   Bot,
+  Building2,
   ChevronDown,
   Command,
   LayoutDashboard,
@@ -20,9 +21,11 @@ import {
   Zap,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
+import { OrganizationSwitcher } from "./organization-switcher";
 
 const navigation = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Organizations", href: "/dashboard/organizations", icon: Building2 },
   { label: "Agents", href: "/dashboard/agents", icon: Bot },
   { label: "Usage", href: "/dashboard/usage", icon: Activity },
   { label: "Settings", href: "/dashboard/settings", icon: Settings },
@@ -70,20 +73,7 @@ function SidebarContent({
         <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/35">
           Workspace
         </p>
-        <Button className="h-auto w-full justify-start gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-left text-white hover:bg-white/[0.08] hover:text-white" variant="outline">
-          <span className="flex size-8 items-center justify-center rounded-lg bg-[#c5ef70]/15 text-xs font-semibold text-[#c5ef70]">
-            AC
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-xs font-medium text-white">
-              Acme Corporation
-            </span>
-            <span className="mt-0.5 block text-[10px] text-white/40">
-              Free plan
-            </span>
-          </span>
-          <ChevronDown aria-hidden="true" className="size-4 text-white/40" />
-        </Button>
+        <OrganizationSwitcher onNavigate={onNavigate} />
       </div>
 
       <nav aria-label="Dashboard navigation" className="mt-8 space-y-1 px-2">
@@ -108,7 +98,11 @@ function SidebarContent({
               key={href}
               onClick={onNavigate}
             >
-              <Icon aria-hidden="true" className="size-[17px]" strokeWidth={1.8} />
+              <Icon
+                aria-hidden="true"
+                className="size-[17px]"
+                strokeWidth={1.8}
+              />
               {label}
             </Link>
           );
@@ -120,7 +114,9 @@ function SidebarContent({
           <span className="flex size-8 items-center justify-center rounded-lg bg-[#c5ef70]/10 text-[#c5ef70]">
             <Zap aria-hidden="true" className="size-4" />
           </span>
-          <p className="mt-3 text-xs font-semibold text-white">Need more room?</p>
+          <p className="mt-3 text-xs font-semibold text-white">
+            Need more room?
+          </p>
           <p className="mt-1 text-[11px] leading-5 text-white/45">
             Upgrade your plan to unlock more conversations.
           </p>
@@ -129,7 +125,10 @@ function SidebarContent({
             href="/dashboard/settings"
             onClick={onNavigate}
           >
-            Explore plans <span aria-hidden="true" className="ml-1">→</span>
+            Explore plans{" "}
+            <span aria-hidden="true" className="ml-1">
+              →
+            </span>
           </Link>
         </div>
         <button
@@ -138,11 +137,19 @@ function SidebarContent({
           onClick={onSignOut}
           type="button"
         >
-          <Command aria-hidden="true" className="size-[17px]" strokeWidth={1.8} />
+          <Command
+            aria-hidden="true"
+            className="size-[17px]"
+            strokeWidth={1.8}
+          />
           {isSigningOut ? "Signing out..." : "Sign out"}
         </button>
         {signOutError && (
-          <p aria-live="assertive" className="px-3 text-xs text-red-300" role="alert">
+          <p
+            aria-live="assertive"
+            className="px-3 text-xs text-red-300"
+            role="alert"
+          >
             {signOutError}
           </p>
         )}
@@ -154,6 +161,7 @@ function SidebarContent({
 export function DashboardShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { data: session, isPending, error, refetch } = authClient.useSession();
+  const { data: activeOrganization } = authClient.useActiveOrganization();
   const signOutMutation = useSignOutMutation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
@@ -173,11 +181,16 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   }, [error, isPending, router, session]);
 
   useEffect(() => {
-    setDarkMode(window.localStorage.getItem("altos-dashboard-theme") === "dark");
+    setDarkMode(
+      window.localStorage.getItem("altos-dashboard-theme") === "dark",
+    );
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem("altos-dashboard-theme", darkMode ? "dark" : "light");
+    window.localStorage.setItem(
+      "altos-dashboard-theme",
+      darkMode ? "dark" : "light",
+    );
   }, [darkMode]);
 
   if (isPending) {
@@ -237,21 +250,29 @@ export function DashboardShell({ children }: { children: ReactNode }) {
               type="button"
               variant="outline"
             >
-              {mobileOpen ? <X className="size-4" /> : <Menu className="size-4" />}
+              {mobileOpen ? (
+                <X className="size-4" />
+              ) : (
+                <Menu className="size-4" />
+              )}
             </Button>
             <div className="hidden items-center gap-2 text-xs text-[#8a9489] sm:flex">
               <span>Workspace</span>
               <span aria-hidden="true">/</span>
-              <span className="font-medium text-[#405044]">Acme Corporation</span>
+              <span className="font-medium text-[#405044]">
+                {activeOrganization?.name ?? "No organization"}
+              </span>
             </div>
             <span className="text-sm font-semibold text-[#27342b] sm:hidden">
-              Acme Corporation
+              {activeOrganization?.name ?? "No organization"}
             </span>
           </div>
 
           <div className="flex items-center gap-3">
             <Button
-              aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+              aria-label={
+                darkMode ? "Switch to light mode" : "Switch to dark mode"
+              }
               aria-pressed={darkMode}
               className="size-9 rounded-full border border-[#e5e8e1] bg-white text-[#657166] transition hover:border-[#cad6bf] hover:text-[#3d503f]"
               onClick={() => setDarkMode(!darkMode)}
@@ -259,7 +280,11 @@ export function DashboardShell({ children }: { children: ReactNode }) {
               type="button"
               variant="outline"
             >
-              {darkMode ? <Sun aria-hidden="true" className="size-4" /> : <Moon aria-hidden="true" className="size-4" />}
+              {darkMode ? (
+                <Sun aria-hidden="true" className="size-4" />
+              ) : (
+                <Moon aria-hidden="true" className="size-4" />
+              )}
             </Button>
             <Badge className="hidden h-auto items-center gap-1.5 rounded-full border-[#e4e9df] bg-white px-2.5 py-1.5 text-[11px] font-medium text-[#637064] sm:inline-flex">
               <span className="size-1.5 rounded-full bg-[#8db552]" />
@@ -276,7 +301,10 @@ export function DashboardShell({ children }: { children: ReactNode }) {
               <span className="hidden text-xs font-medium text-[#344237] sm:block">
                 {userName}
               </span>
-              <ChevronDown aria-hidden="true" className="hidden size-3.5 text-[#899286] sm:block" />
+              <ChevronDown
+                aria-hidden="true"
+                className="hidden size-3.5 text-[#899286] sm:block"
+              />
             </Button>
           </div>
         </header>

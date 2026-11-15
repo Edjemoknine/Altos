@@ -1,18 +1,18 @@
 import { authClient } from "./auth-client";
 
-export const createOrganizationClient = async () => {
-  try {
-    const { data, error } = await authClient.organization.create({
-      name: "Acme Corporation",
-      slug: "acme-corporation",
-    });
+export type CreateOrganizationInput = {
+  name: string;
+  slug: string;
+};
 
-    if (error) {
-      throw new Error(error.message);
-    }
+export const createOrganizationClient = async (
+  input: CreateOrganizationInput,
+) => {
+  const { data, error } = await authClient.organization.create(input);
 
-    console.log(data);
-  } catch (error) {
-    console.error(error);
+  if (error) {
+    throw new Error(error.message);
   }
+
+  return data;
 };
