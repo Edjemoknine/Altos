@@ -4,6 +4,8 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter/relations-v2";
 import { authSchema, db } from "../db/index.ts";
 import { organization } from "better-auth/plugins";
+import { sendEmail } from "../services/email.service.ts";
+import { invitationTemplate } from "../templates/invitation.template.ts";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -39,13 +41,16 @@ export const auth = betterAuth({
     organization({
       creatorRole: "owner",
       async sendInvitationEmail(data) {
-        const inviteLink = `${process.env.FRONTEND_URL}/accept-invitation/${data.id}`;
+        const inviteUrl = `${process.env.FRONTEND_URL}/accept-invitation/${data.id}`;
 
-        console.log("Organization invitation:", {
-          email: data.email,
-          organization: data.organization.name,
-          inviter: data.inviter.user.name,
-          inviteLink,
+        await sendEmail({
+          to: data.email,
+          subject: `You're invited to join ${data.organization.name} on Altos`,
+          html: invitationTemplate({
+            organizationName: data.organization.name,
+            inviterName: data.inviter.user.name,
+            inviteUrl,
+          }),
         });
       },
     }),
