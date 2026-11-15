@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   check,
+  index,
   jsonb,
   pgTable,
   text,
@@ -33,6 +34,7 @@ export const agents = pgTable(
       .notNull(),
   },
   (table) => [
+    index("agents_organizationId_idx").on(table.organizationId),
     check(
       "agents_status_check",
       sql`${table.status} in ('active', 'inactive')`,
