@@ -17,17 +17,16 @@ import {
   Bot,
   Coins,
   MessageSquareText,
+  Plus,
   Sparkles,
   Volume2,
 } from "lucide-react";
 import {
-  CreateAction,
   MetricCard,
   PageHeading,
   Panel,
   PanelHeading,
 } from "../_components/dashboard-ui";
-import { CreateAgentDialog } from "../_components/create-agent-dialog";
 import { activityRows, seedAgents, type Agent } from "../_components/mock-data";
 
 const modes = [
@@ -37,12 +36,7 @@ const modes = [
 ];
 
 export default function DashboardOverviewPage() {
-  const [createOpen, setCreateOpen] = useState(false);
   const [agents, setAgents] = useState<Agent[]>(seedAgents);
-
-  function addAgent(agent: Agent) {
-    setAgents((current) => [agent, ...current]);
-  }
 
   return (
     <>
@@ -50,7 +44,15 @@ export default function DashboardOverviewPage() {
         eyebrow="Saturday, October 18, 2025"
         title="Good morning, Jordan"
         description="Here’s what’s happening with your AI support workspace today."
-        action={<CreateAction onClick={() => setCreateOpen(true)} />}
+        action={
+          <Link
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#17221b] px-4 text-sm font-semibold text-white transition hover:bg-[#304536]"
+            href="/dashboard/agents/new"
+          >
+            <Plus aria-hidden="true" className="size-4" />
+            Create new agent
+          </Link>
+        }
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -192,7 +194,6 @@ export default function DashboardOverviewPage() {
           </Panel>
         </div>
       </div>
-      <CreateAgentDialog open={createOpen} onClose={() => setCreateOpen(false)} onCreate={addAgent} />
     </>
   );
 }
