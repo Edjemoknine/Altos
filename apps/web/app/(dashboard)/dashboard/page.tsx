@@ -27,7 +27,8 @@ import {
   Panel,
   PanelHeading,
 } from "../_components/dashboard-ui";
-import { activityRows, seedAgents, type Agent } from "../_components/mock-data";
+import { activityRows, seedAgents } from "../_components/mock-data";
+import type { DemoAgent } from "@/types/agents";
 
 const modes = [
   { title: "Text chat", icon: MessageSquareText, color: "text-[#607b4b] bg-[#eef4e8]" },
@@ -36,7 +37,7 @@ const modes = [
 ];
 
 export default function DashboardOverviewPage() {
-  const [agents, setAgents] = useState<Agent[]>(seedAgents);
+  const [agents, setAgents] = useState<DemoAgent[]>(seedAgents);
 
   return (
     <>

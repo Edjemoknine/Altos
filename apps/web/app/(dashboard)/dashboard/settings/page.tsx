@@ -5,6 +5,16 @@ import { Badge } from "@repo/ui/components/badge";
 import { Input } from "@repo/ui/components/input";
 import { BadgeCheck, Check, CreditCard, LockKeyhole, Mail, Upload, UserRound } from "lucide-react";
 import {
+  avatarFileSchema,
+  passwordChangeSchema,
+  profileSchema,
+} from "@/schemas/profile";
+import type {
+  AvatarFile,
+  PasswordChangeFormValues,
+  ProfileFormValues,
+} from "@/types/profile";
+import {
   Field,
   inputClassName,
   PageHeading,
@@ -16,39 +26,75 @@ import {
 
 export default function SettingsPage() {
   const [profileNotice, setProfileNotice] = useState("");
+  const [profileError, setProfileError] = useState(false);
   const [passwordNotice, setPasswordNotice] = useState("");
+  const [passwordError, setPasswordError] = useState(false);
   const [avatarName, setAvatarName] = useState("");
+  const [avatarError, setAvatarError] = useState(false);
   const avatarInput = useRef<HTMLInputElement>(null);
 
   function saveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const values: ProfileFormValues = {
+      name: String(form.get("name") ?? ""),
+      email: String(form.get("email") ?? ""),
+    };
+    const result = profileSchema.safeParse(values);
+    if (!result.success) {
+      setProfileError(true);
+      setProfileNotice(
+        result.error.issues[0]?.message ?? "Unable to save profile changes.",
+      );
+      return;
+    }
+
+    setProfileError(false);
     setProfileNotice("Your profile changes have been saved in this demo.");
   }
 
   function changePassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const password = String(form.get("new-password") ?? "");
-    if (password !== String(form.get("confirm-password") ?? "")) {
-      setPasswordNotice("Your new passwords do not match.");
+    const values: PasswordChangeFormValues = {
+      currentPassword: String(form.get("current-password") ?? ""),
+      newPassword: String(form.get("new-password") ?? ""),
+      confirmPassword: String(form.get("confirm-password") ?? ""),
+    };
+    const result = passwordChangeSchema.safeParse(values);
+    if (!result.success) {
+      setPasswordError(true);
+      const mismatch = result.error.issues.find(
+        (issue) => issue.path[0] === "confirmPassword",
+      );
+      setPasswordNotice(
+        mismatch?.message ??
+          result.error.issues[0]?.message ??
+          "Unable to update your password.",
+      );
       return;
     }
-    if (password.length < 8) {
-      setPasswordNotice("Use at least 8 characters for your new password.");
-      return;
-    }
+
+    setPasswordError(false);
     setPasswordNotice("Password reset saved for this demo account.");
     event.currentTarget.reset();
   }
 
   function selectAvatar(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+    const file: AvatarFile | undefined = event.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setAvatarName("Choose an image file to update your avatar.");
+    const result = avatarFileSchema.safeParse(file);
+    if (!result.success) {
+      setAvatarError(true);
+      setAvatarName(
+        result.error.issues[0]?.message ??
+          "Choose an image file to update your avatar.",
+      );
       event.target.value = "";
       return;
     }
+
+    setAvatarError(false);
     setAvatarName(`${file.name} selected. Avatar upload is a demo preview.`);
   }
 
@@ -74,7 +120,7 @@ export default function SettingsPage() {
                   <SecondaryButton onClick={() => avatarInput.current?.click()} type="button">
                     <Upload aria-hidden="true" className="size-3.5" /> Upload avatar
                   </SecondaryButton>
-                  <p aria-live="polite" className="mt-1.5 text-[10px] text-[#929b90]">{avatarName || "JPG, PNG or GIF. 2 MB max."}</p>
+                  <p aria-live="polite" className={`mt-1.5 text-[10px] ${avatarError ? "text-[#b75d47]" : "text-[#929b90]"}`}>{avatarName || "JPG, PNG or GIF. 2 MB max."}</p>
                 </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -91,7 +137,7 @@ export default function SettingsPage() {
                 </Field>
               </div>
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#eff1ec] pt-4">
-                <p aria-live="polite" className="text-xs text-[#5f7e49]">{profileNotice}</p>
+                <p aria-live="polite" className={`text-xs ${profileError ? "text-[#b75d47]" : "text-[#5f7e49]"}`}>{profileNotice}</p>
                 <PrimaryButton type="submit">Save changes</PrimaryButton>
               </div>
             </form>
@@ -112,7 +158,7 @@ export default function SettingsPage() {
                 </Field>
               </div>
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#eff1ec] pt-4">
-                <p aria-live="polite" className={`text-xs ${passwordNotice.includes("match") || passwordNotice.includes("Use") ? "text-[#b75d47]" : "text-[#5f7e49]"}`}>{passwordNotice}</p>
+                <p aria-live="polite" className={`text-xs ${passwordError ? "text-[#b75d47]" : "text-[#5f7e49]"}`}>{passwordNotice}</p>
                 <SecondaryButton type="submit"><LockKeyhole aria-hidden="true" className="size-3.5" /> Update password</SecondaryButton>
               </div>
             </form>

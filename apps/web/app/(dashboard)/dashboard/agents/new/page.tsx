@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
 import { Input } from "@repo/ui/components/input";
@@ -16,6 +15,8 @@ import { Textarea } from "@repo/ui/components/textarea";
 
 import { authClient } from "@/auth/auth-client";
 import { useCreateAgent } from "@/services/agent.service";
+import { createAgentSchema } from "@/schemas/agents";
+import type { CreateAgentFormValues } from "@/types/agents";
 
 import {
   Field,
@@ -25,29 +26,6 @@ import {
   PrimaryButton,
   textareaClassName,
 } from "../../../_components/dashboard-ui";
-
-const agentFormSchema = z.object({
-  name: z.string().trim().min(1, "Enter an agent name.").max(100),
-  description: z.string().trim().min(1, "Enter a description.").max(300),
-  website: z
-    .string()
-    .trim()
-    .min(1, "Enter a website URL.")
-    .refine((value) => {
-      try {
-        const url = new URL(value);
-        return (
-          ["http:", "https:"].includes(url.protocol) && url.hostname.length > 0
-        );
-      } catch {
-        return false;
-      }
-    }, "Enter a valid HTTP or HTTPS website URL."),
-  tone: z.enum(["Professional", "Friendly", "Casual", "Empathic"]),
-  prompt: z.string().trim().min(1, "Enter a base system prompt."),
-});
-
-type AgentFormValues = z.infer<typeof agentFormSchema>;
 
 export default function NewAgentPage() {
   const router = useRouter();
@@ -60,8 +38,8 @@ export default function NewAgentPage() {
     setError,
     clearErrors,
     formState: { errors, isSubmitting },
-  } = useForm<AgentFormValues>({
-    resolver: zodResolver(agentFormSchema),
+  } = useForm<CreateAgentFormValues>({
+    resolver: zodResolver(createAgentSchema),
     defaultValues: {
       name: "",
       description: "",
@@ -71,7 +49,7 @@ export default function NewAgentPage() {
     },
   });
 
-  async function submit(values: AgentFormValues) {
+  async function submit(values: CreateAgentFormValues) {
     clearErrors("root");
     if (!activeOrganization?.id) {
       setError("root", {

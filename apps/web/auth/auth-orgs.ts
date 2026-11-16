@@ -1,10 +1,6 @@
 import { authClient } from "./auth-client";
+import type { CreateOrganizationInput } from "@/types/organizations";
 export { inviteOrganizationMember } from "@/services/organization.service";
-
-export type CreateOrganizationInput = {
-  name: string;
-  slug: string;
-};
 
 export const createOrganizationClient = async (
   input: CreateOrganizationInput,

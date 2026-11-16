@@ -16,11 +16,8 @@ import {
   Trash2,
 } from "lucide-react";
 import { authClient } from "@/auth/auth-client";
-import {
-  type Agent,
-  useAgents,
-  useDeleteAgent,
-} from "@/services/agent.service";
+import { useAgents, useDeleteAgent } from "@/services/agent.service";
+import type { Agent } from "@/types/agents";
 import { PageHeading, Panel } from "../../_components/dashboard-ui";
 import { DeleteAgentDialog } from "../../_components/delete-agent";
 import {

@@ -1,16 +1,6 @@
-export type AgentTone = "Professional" | "Friendly" | "Casual" | "Empathic";
+import type { AgentTone, DemoAgent } from "@/types/agents";
 
-export type Agent = {
-  id: string;
-  name: string;
-  description: string;
-  website: string;
-  tone: AgentTone;
-  createdAt: string;
-  status: "Active" | "Training";
-};
-
-export const seedAgents: [Agent, ...Agent[]] = [
+export const seedAgents: [DemoAgent, ...DemoAgent[]] = [
   {
     id: "support-assistant",
     name: "Support Assistant",

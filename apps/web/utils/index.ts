@@ -1,4 +1,4 @@
-import { type Agent, type AgentTone } from "@/services/agent.service";
+import { agentTones, type Agent, type AgentTone } from "@/types/agents";
 
 const toneStyles: Record<AgentTone, string> = {
   Professional: "bg-[#eef1f8] text-[#677493]",
@@ -7,7 +7,7 @@ const toneStyles: Record<AgentTone, string> = {
   Empathic: "bg-[#f5edf4] text-[#9a6f91]",
 };
 
-const tones: AgentTone[] = ["Professional", "Friendly", "Casual", "Empathic"];
+const tones = agentTones;
 
 function getAgentTone(agent: Agent): AgentTone {
   return tones.find((tone) => tone === agent.settings.tone) ?? "Friendly";

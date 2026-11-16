@@ -10,6 +10,7 @@ import {
 } from "@repo/ui/components/dialog";
 import { Input } from "@repo/ui/components/input";
 import { createOrganizationClient } from "@/auth/auth-orgs";
+import { createOrganizationSchema } from "@/schemas/organizations";
 import { Field, inputClassName, PrimaryButton, SecondaryButton } from "./dashboard-ui";
 
 export function CreateOrganizationDialog({
@@ -33,13 +34,16 @@ export function CreateOrganizationDialog({
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const name = String(form.get("name") ?? "").trim();
-    const slug = String(form.get("slug") ?? "")
-      .trim()
-      .toLowerCase();
+    const parsed = createOrganizationSchema.safeParse({
+      name: form.get("name"),
+      slug: form.get("slug"),
+    });
 
-    if (!name || !slug) {
-      setError("Enter an organization name and URL slug.");
+    if (!parsed.success) {
+      setError(
+        parsed.error.issues[0]?.message ??
+          "Enter an organization name and URL slug.",
+      );
       return;
     }
 
@@ -47,7 +51,7 @@ export function CreateOrganizationDialog({
     setError("");
 
     try {
-      await createOrganizationClient({ name, slug });
+      await createOrganizationClient(parsed.data);
       onCreated?.();
       onClose();
     } catch (creationError) {

@@ -1,30 +1,6 @@
 import axios from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-
-export type AgentTone = "Professional" | "Friendly" | "Casual" | "Empathic";
-
-export type CreateAgentInput = {
-  name: string;
-  description: string;
-  instructions: string;
-  settings: {
-    website: string;
-    tone: AgentTone;
-  };
-};
-
-export type Agent = {
-  id: string;
-  organizationId: string;
-  name: string;
-  description: string;
-  instructions: string;
-  status: "active" | "inactive";
-  publicId: string;
-  settings: Record<string, unknown>;
-  createdAt: string;
-  updatedAt: string;
-};
+import type { Agent, CreateAgentInput } from "@/types/agents";
 
 type ApiResponse<T> = {
   success: boolean;
