@@ -7,6 +7,7 @@ import {
   timestamp,
   uniqueIndex,
   uuid,
+  varchar,
   vector,
 } from "drizzle-orm/pg-core";
 import { agents } from "./agent.ts";
@@ -29,6 +30,9 @@ export const documentChunks = pgTable(
     chunkIndex: integer("chunk_index").notNull(),
     content: text("content").notNull(),
     embedding: vector("embedding", { dimensions: 1536 }).notNull(),
+    embeddingModel: varchar("embedding_model")
+      .default("text-embedding-3-small")
+      .notNull(),
     metadata: jsonb("metadata")
       .$type<Record<string, unknown>>()
       .default({})

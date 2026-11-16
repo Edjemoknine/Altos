@@ -110,3 +110,71 @@ pnpm start
 ## Notes
 
 This service is designed as a scalable backend foundation for an AI-driven customer support platform. The initial structure is intentionally modular so that auth, storage, retrieval, embeddings, and analytics can be added incrementally without disrupting the application architecture.
+
+
+```bash
+apps/api/src/
+├── controllers/
+│   ├── agent.controller.ts
+│   ├── source.controller.ts
+│   ├── document.controller.ts
+│   ├── ingestion-job.controller.ts
+│   └── ingestion.controller.ts
+│
+├── routes/
+│   ├── agent.route.ts
+│   ├── source.route.ts
+│   ├── document.route.ts
+│   ├── ingestion-job.route.ts
+│   └── ingestion.route.ts
+│
+├── middlewares/
+│   ├── auth.middleware.ts
+│   ├── organization.middleware.ts
+│   └── qstash.middleware.ts
+│
+├── services/
+│   ├── source.service.ts
+│   ├── ingestion.service.ts
+│   ├── document.service.ts
+│   └── embedding.service.ts
+│
+├── db/
+│   └── schemas/
+│       ├── agent.ts
+│       ├── source.ts
+│       ├── document.ts
+│       ├── document-chunk.ts
+│       └── ingestion-job.ts
+│
+└── index.ts
+```
+
+
+apps/api/src/services/:
+
+```bash
+services/
+├── ai/
+│   ├── models/
+│   │   ├── embeddings.ts
+│   │   └── chat-model.ts
+│   │
+│   ├── loaders/
+│   │   ├── file-loader.ts
+│   │   ├── website-loader.ts
+│   │   └── text-loader.ts
+│   │
+│   ├── ingestion/
+│   │   ├── chunking.ts
+│   │   ├── document.service.ts
+│   │   └── ingestion.service.ts
+│   │
+│   └── rag/
+│       ├── retrieval.service.ts
+│       ├── prompt.ts
+│       └── answer.service.ts
+│
+├── source.service.ts
+└── ingestion-job.service.ts
+```

@@ -1,0 +1,1 @@
+ALTER TABLE "document_chunks" ADD COLUMN "embedding_model" varchar DEFAULT 'text-embedding-3-small' NOT NULL;

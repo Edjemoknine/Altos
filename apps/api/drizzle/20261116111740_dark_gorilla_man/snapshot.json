@@ -1,0 +1,47 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "1af0d0f4-ced8-4bb6-8a7f-a194aad44b06",
+  "prevIds": [
+    "fa341c7f-00df-47e5-a1f8-5c16195b482e"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "document_chunks",
+        "embedding_model"
+      ],
+      "writes": [
+        "s|col|public.document_chunks.embedding_model",
+        "n|col|public.document_chunks.embedding_model",
+        "e|col|public.document_chunks.embedding_model"
+      ],
+      "reads": [
+        "n|tbl|public.document_chunks",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "document_chunks",
+        "name": "embedding_model",
+        "type": "varchar",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'text-embedding-3-small'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}
