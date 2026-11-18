@@ -17,7 +17,8 @@
     "check-types": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "auth:generate": "pnpm dlx auth@latest generate --config src/auth/auth.ts --output src/db/schemas/auth.ts"
+    "auth:generate": "pnpm dlx auth@latest generate --config src/auth/auth.ts --output src/db/schemas/auth.ts",
+    "dev:trigger": "trigger.dev@latest dev"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "^1.7.18",
@@ -27,7 +28,7 @@
     "@langchain/openai": "^1.8.4",
     "@langchain/textsplitters": "^1.0.2",
     "@neondatabase/serverless": "^1.2.0",
-    "@upstash/qstash": "^2.12.2",
+    "@trigger.dev/sdk": "4.8.5",
     "better-auth": "^1.7.18",
     "dotenv": "^18.0.10",
     "drizzle-orm": "1.0.0-rc.5",
@@ -38,6 +39,8 @@
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
+    "@trigger.dev/build": "4.8.5",
+    "@trigger.dev/cli": "^3.3.12",
     "@types/node": "^26.1.1",
     "drizzle-kit": "1.0.0-rc.5",
     "tsx": "^4.23.0",
