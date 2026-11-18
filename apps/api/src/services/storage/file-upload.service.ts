@@ -458,3 +458,85 @@ export async function completeFileUpload(scope: SourceScope) {
     source: updatedSource,
   };
 }
+
+export async function retryFailedFileUpload(scope: SourceScope) {
+  const [source] = await db
+    .select({
+      id: sources.id,
+      type: sources.type,
+      status: sources.status,
+    })
+    .from(sources)
+    .where(
+      and(
+        eq(sources.id, scope.sourceId),
+        eq(sources.organizationId, scope.organizationId),
+        eq(sources.agentId, scope.agentId),
+      ),
+    )
+    .limit(1);
+
+  if (!source) {
+    return { success: false as const, reason: "not_found" as const };
+  }
+
+  if (source.type !== "file") {
+    return { success: false as const, reason: "not_file" as const };
+  }
+
+  if (source.status !== "failed") {
+    return { success: false as const, reason: "not_failed" as const };
+  }
+
+  const [retryingSource] = await db
+    .update(sources)
+    .set({ status: "pending" })
+    .where(
+      and(
+        eq(sources.id, scope.sourceId),
+        eq(sources.organizationId, scope.organizationId),
+        eq(sources.agentId, scope.agentId),
+        eq(sources.status, "failed"),
+      ),
+    )
+    .returning({ id: sources.id });
+
+  if (!retryingSource) {
+    return { success: false as const, reason: "not_failed" as const };
+  }
+
+  let result: Awaited<ReturnType<typeof completeFileUpload>>;
+
+  try {
+    result = await completeFileUpload(scope);
+  } catch (error) {
+    await db
+      .update(sources)
+      .set({ status: "failed" })
+      .where(
+        and(
+          eq(sources.id, scope.sourceId),
+          eq(sources.organizationId, scope.organizationId),
+          eq(sources.agentId, scope.agentId),
+          eq(sources.status, "pending"),
+        ),
+      );
+    throw error;
+  }
+
+  if (!result.success) {
+    await db
+      .update(sources)
+      .set({ status: "failed" })
+      .where(
+        and(
+          eq(sources.id, scope.sourceId),
+          eq(sources.organizationId, scope.organizationId),
+          eq(sources.agentId, scope.agentId),
+          eq(sources.status, "pending"),
+        ),
+      );
+  }
+
+  return result;
+}

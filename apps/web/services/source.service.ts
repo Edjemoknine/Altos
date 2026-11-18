@@ -16,6 +16,8 @@ export type AgentSource = {
   createdAt: string;
 };
 
+export type AgentDocumentUploadStage = "extracting" | "processing";
+
 type UploadUrlResponse = {
   source: AgentSource;
   uploadUrl: string;
@@ -109,6 +111,7 @@ export async function uploadAgentDocument(
   organizationId: string,
   agentId: string,
   file: File,
+  onStage?: (stage: AgentDocumentUploadStage) => void,
 ): Promise<AgentSource> {
   requireApiUrl();
   const sourcePath = getSourcePath(organizationId, agentId);
@@ -140,19 +143,26 @@ export async function uploadAgentDocument(
       headers: { "Content-Type": contentType },
     });
 
+    onStage?.("extracting");
     const completeResponse = await api.post<ApiResponse<AgentSource>>(
       `${sourcePath}/${encodeURIComponent(upload.source.id)}/complete`,
     );
     const result = completeResponse.data;
 
     if (!result.success || !result.data) {
-      throw new Error(result.message ?? "Unable to finish the document upload.");
+      throw new Error(
+        result.message ?? "Unable to finish the document upload.",
+      );
     }
 
+    onStage?.("processing");
     return result.data;
   } catch (error) {
     throw new Error(
-      getErrorMessage(error, "Unable to upload the document. Please try again."),
+      getErrorMessage(
+        error,
+        "Unable to upload the document. Please try again.",
+      ),
     );
   }
 }
@@ -177,9 +187,35 @@ export async function deleteAgentSource(
   }
 }
 
+export async function retryAgentSource(
+  organizationId: string,
+  agentId: string,
+  sourceId: string,
+): Promise<AgentSource> {
+  requireApiUrl();
+
+  try {
+    const response = await api.post<ApiResponse<AgentSource>>(
+      `${getSourcePath(organizationId, agentId)}/${encodeURIComponent(sourceId)}/retry`,
+    );
+    const result = response.data;
+
+    if (!result.success || !result.data) {
+      throw new Error(result.message ?? "Unable to retry source processing.");
+    }
+
+    return result.data;
+  } catch (error) {
+    throw new Error(
+      getErrorMessage(error, "Unable to retry source processing."),
+    );
+  }
+}
+
 export function useUploadAgentDocument(
   organizationId: string | undefined,
   agentId: string | undefined,
+  onStage?: (stage: AgentDocumentUploadStage) => void,
 ) {
   const queryClient = useQueryClient();
 
@@ -189,9 +225,9 @@ export function useUploadAgentDocument(
         throw new Error("Select an organization and agent before uploading.");
       }
 
-      return uploadAgentDocument(organizationId, agentId, file);
+      return uploadAgentDocument(organizationId, agentId, file, onStage);
     },
-    onSuccess: () =>
+    onSettled: () =>
       queryClient.invalidateQueries({
         queryKey: sourceQueryKeys.list(organizationId, agentId),
       }),
@@ -211,6 +247,27 @@ export function useDeleteAgentSource(
       }
 
       return deleteAgentSource(organizationId, agentId, sourceId);
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: sourceQueryKeys.list(organizationId, agentId),
+      }),
+  });
+}
+
+export function useRetryAgentSource(
+  organizationId: string | undefined,
+  agentId: string | undefined,
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (sourceId: string) => {
+      if (!organizationId || !agentId) {
+        throw new Error("Select an organization and source before retrying.");
+      }
+
+      return retryAgentSource(organizationId, agentId, sourceId);
     },
     onSuccess: () =>
       queryClient.invalidateQueries({

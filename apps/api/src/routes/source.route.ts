@@ -8,6 +8,7 @@ import {
   getSource,
   listSources,
   refreshFileUploadUrl,
+  retrySourceProcessing,
 } from "../controllers/source.controller.ts";
 
 import {
@@ -50,6 +51,12 @@ sourceRoutes.post(
   "/:sourceId/complete",
   requireOrganizationRole(["owner"]),
   confirmFileUpload,
+);
+
+sourceRoutes.post(
+  "/:sourceId/retry",
+  requireOrganizationRole(["owner"]),
+  retrySourceProcessing,
 );
 
 sourceRoutes.delete(

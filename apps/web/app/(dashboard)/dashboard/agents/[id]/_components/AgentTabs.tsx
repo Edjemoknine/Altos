@@ -42,7 +42,7 @@ export function AgentTabs({ agent }: { agent: Agent }) {
               aria-selected={activeTab === tab.id}
               className={`h-auto rounded-none border-b-2 bg-transparent px-0.5 pb-3 pt-1 text-xs font-semibold transition hover:bg-transparent ${
                 activeTab === tab.id
-                  ? "border-[#6e914c] text-[#456337]"
+                  ? "border-b-[#6e914c] text-[#456337]"
                   : "border-transparent text-[#849084] hover:text-[#4f5e51]"
               }`}
               key={tab.id}

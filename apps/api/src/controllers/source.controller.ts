@@ -12,6 +12,7 @@ import {
   completeFileUpload,
   createFileUpload,
   createSourceUploadUrl,
+  retryFailedFileUpload,
 } from "../services/storage/file-upload.service.ts";
 import { deleteUploadedObject } from "../services/storage/r2.service.ts";
 
@@ -371,6 +372,89 @@ export const confirmFileUpload = async (c: SourceContext) => {
 
     return c.json(
       { success: false, message: "Failed to confirm file upload" },
+      500,
+    );
+  }
+};
+
+// POST /:sourceId/retry
+export const retrySourceProcessing = async (c: SourceContext) => {
+  const { organizationId, agentId, sourceId } = c.req.param();
+
+  if (!organizationId || !agentId || !sourceId) {
+    return c.json({ success: false, message: "Missing route parameters" }, 400);
+  }
+
+  try {
+    const result = await retryFailedFileUpload({
+      organizationId,
+      agentId,
+      sourceId,
+    });
+
+    if (!result.success) {
+      if (result.reason === "not_found") {
+        return c.json({ success: false, message: "Source not found" }, 404);
+      }
+
+      if (result.reason === "not_file") {
+        return c.json(
+          {
+            success: false,
+            message: "Retry is currently supported only for file sources",
+          },
+          409,
+        );
+      }
+
+      if (result.reason === "not_failed") {
+        return c.json(
+          { success: false, message: "Only failed sources can be retried" },
+          409,
+        );
+      }
+
+      if (result.reason === "not_uploaded") {
+        return c.json(
+          { success: false, message: "The original file is no longer available" },
+          409,
+        );
+      }
+
+      if (result.reason === "extraction_failed") {
+        return c.json({ success: false, message: result.message }, 422);
+      }
+
+      if (result.reason === "duplicate") {
+        return c.json({ success: false, message: result.message }, 409);
+      }
+
+      if (result.reason === "invalid_file") {
+        return c.json(
+          { success: false, message: "The stored file is invalid" },
+          422,
+        );
+      }
+
+      return c.json(
+        {
+          success: false,
+          message: "File source cannot be retried in its current state",
+        },
+        409,
+      );
+    }
+
+    return c.json({
+      success: true,
+      message: "Source processing completed successfully",
+      data: result.source,
+    });
+  } catch (error) {
+    console.error("Retry source processing error:", error);
+
+    return c.json(
+      { success: false, message: "Failed to retry source processing" },
       500,
     );
   }
