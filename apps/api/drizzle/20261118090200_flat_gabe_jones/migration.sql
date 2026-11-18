@@ -1,0 +1,1 @@
+ALTER TABLE "ingestion_jobs" RENAME COLUMN "queue_job_id" TO "trigger_run_id";

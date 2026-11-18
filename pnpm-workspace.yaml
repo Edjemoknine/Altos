@@ -10,5 +10,11 @@ catalog:
   "@tailwindcss/postcss": ^4
   typescript: ^5.9.3
 permissions:
+  '@trigger.dev/sdk':
+    skills: [trigger-authoring-chat-agent, trigger-authoring-tasks, trigger-chat-agent-advanced, trigger-cost-savings, trigger-realtime-and-frontend]
   drizzle-kit:
     skills: true
+  ngrok:
+    build: false
+  protobufjs:
+    build: false

@@ -14,14 +14,9 @@ import { sources } from "./source.ts";
 import { organization } from "./organization.ts";
 
 export type IngestionJobType =
-  | "website_crawl"
-  | "file_processing"
-  | "text_processing";
+  "website_crawl" | "file_processing" | "text_processing";
 export type IngestionJobStatus =
-  | "pending"
-  | "processing"
-  | "completed"
-  | "failed";
+  "pending" | "processing" | "completed" | "failed";
 
 export const ingestionJobs = pgTable(
   "ingestion_jobs",
@@ -42,7 +37,7 @@ export const ingestionJobs = pgTable(
       .default("pending")
       .notNull(),
     progress: integer("progress").default(0).notNull(),
-    queueJobId: text("queue_job_id"),
+    triggerRunId: text("trigger_run_id"),
     errorMessage: text("error_message"),
     startedAt: timestamp("started_at"),
     completedAt: timestamp("completed_at"),

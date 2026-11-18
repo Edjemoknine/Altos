@@ -4,7 +4,7 @@ import { and, eq } from "drizzle-orm";
 import type { CreateSourceInput } from "../types/source.ts";
 import { db } from "../db/index.ts";
 import { agents, documents, ingestionJobs, sources } from "../db/schema.ts";
-import { publishIngestionJob } from "../services/ingestion/queue.service.ts";
+import { triggerSourceIngestion } from "../services/ingestion/trigger.service.ts";
 
 export const getAgent = async (agentId: string, organizationId: string) => {
   const [agent] = await db
@@ -42,8 +42,6 @@ export const createSourceWithIngestion = async ({
 }: CreateSourceOptions) => {
   let sourceId: string | undefined;
 
-  // The database doesn't support transactions, so remove partial source records
-  // if any step before queueing fails.
   try {
     const [source] = await db
       .insert(sources)
@@ -95,19 +93,19 @@ export const createSourceWithIngestion = async ({
       throw new Error("Failed to create ingestion job");
     }
 
-    try {
-      const queueJobId = await publishIngestionJob(job.id);
+    // Trigger.dev: start background ingestion
+    let triggerRunId: string;
 
-      await db
-        .update(ingestionJobs)
-        .set({ queueJobId })
-        .where(eq(ingestionJobs.id, job.id));
-    } catch {
+    try {
+      triggerRunId = await triggerSourceIngestion(job.id);
+    } catch (error) {
+      console.error("Failed to trigger ingestion:", error);
+
       await db
         .update(ingestionJobs)
         .set({
           status: "failed",
-          errorMessage: "Failed to dispatch ingestion job",
+          errorMessage: "Failed to dispatch ingestion task",
           completedAt: new Date(),
         })
         .where(eq(ingestionJobs.id, job.id));
@@ -124,7 +122,25 @@ export const createSourceWithIngestion = async ({
       };
     }
 
-    return { success: true as const, source, job };
+    // Save Trigger.dev run ID separately.
+    // The task may already be running if this update fails.
+    try {
+      await db
+        .update(ingestionJobs)
+        .set({ triggerRunId })
+        .where(eq(ingestionJobs.id, job.id));
+    } catch (error) {
+      console.error("Failed to save Trigger.dev run ID:", error);
+    }
+
+    return {
+      success: true as const,
+      source,
+      job: {
+        ...job,
+        triggerRunId,
+      },
+    };
   } catch (error) {
     if (sourceId) {
       try {

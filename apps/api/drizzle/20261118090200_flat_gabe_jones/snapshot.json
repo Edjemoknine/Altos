@@ -1,0 +1,39 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "5ff3a918-8e63-4a8f-909e-c8f2d9f7268f",
+  "prevIds": [
+    "1af0d0f4-ced8-4bb6-8a7f-a194aad44b06"
+  ],
+  "footprints": [
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "ingestion_jobs",
+        "queue_job_id"
+      ],
+      "writes": [
+        "s|col|public.ingestion_jobs.queue_job_id",
+        "n|col|public.ingestion_jobs.queue_job_id",
+        "s|col|public.ingestion_jobs.trigger_run_id",
+        "n|col|public.ingestion_jobs.trigger_run_id"
+      ],
+      "reads": [
+        "n|tbl|public.ingestion_jobs",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"ingestion_jobs\",\"queue_job_id\"]",
+      "set": {
+        "name": "trigger_run_id"
+      }
+    }
+  ]
+}
