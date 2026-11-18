@@ -157,6 +157,26 @@ export async function uploadAgentDocument(
   }
 }
 
+export async function deleteAgentSource(
+  organizationId: string,
+  agentId: string,
+  sourceId: string,
+): Promise<void> {
+  requireApiUrl();
+
+  try {
+    const response = await api.delete<ApiResponse<unknown>>(
+      `${getSourcePath(organizationId, agentId)}/${encodeURIComponent(sourceId)}`,
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.message ?? "Unable to delete the source.");
+    }
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Unable to delete the source."));
+  }
+}
+
 export function useUploadAgentDocument(
   organizationId: string | undefined,
   agentId: string | undefined,
@@ -170,6 +190,27 @@ export function useUploadAgentDocument(
       }
 
       return uploadAgentDocument(organizationId, agentId, file);
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: sourceQueryKeys.list(organizationId, agentId),
+      }),
+  });
+}
+
+export function useDeleteAgentSource(
+  organizationId: string | undefined,
+  agentId: string | undefined,
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (sourceId: string) => {
+      if (!organizationId || !agentId) {
+        throw new Error("Select an organization and agent before deleting.");
+      }
+
+      return deleteAgentSource(organizationId, agentId, sourceId);
     },
     onSuccess: () =>
       queryClient.invalidateQueries({

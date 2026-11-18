@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@repo/ui/components/button";
-import type { DemoAgent } from "@/types/agents";
+import type { Agent } from "@/types/agents";
 import { AgentApiKeyProvider } from "./AgentApiKeyContext";
 import { AgentConfigurationTab } from "./AgentConfigurationTab";
 import { ApiKeyTab } from "./ApiKeyTab";
@@ -20,7 +20,7 @@ const tabs: { id: AgentTab; label: string }[] = [
   { id: "test", label: "Test agent" },
 ];
 
-export function AgentTabs({ agent }: { agent: DemoAgent }) {
+export function AgentTabs({ agent }: { agent: Agent }) {
   const [activeTab, setActiveTab] = useState<AgentTab>("configuration");
 
   useEffect(() => {

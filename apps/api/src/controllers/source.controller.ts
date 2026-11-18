@@ -3,7 +3,10 @@ import type { Context } from "hono";
 
 import { db } from "../db/index.ts";
 import { sources } from "../db/schema.ts";
-import { getAgent } from "../helpers/source.service.ts";
+import {
+  DuplicateDocumentError,
+  getAgent,
+} from "../helpers/source.service.ts";
 import type { OrganizationEnv } from "../middlewares/organization.middleware.ts";
 import {
   completeFileUpload,
@@ -133,6 +136,10 @@ export const createSource = async (c: SourceContext) => {
       201,
     );
   } catch (error) {
+    if (error instanceof DuplicateDocumentError) {
+      return c.json({ success: false, message: error.message }, 409);
+    }
+
     console.error("Create source error:", error);
 
     return c.json({ success: false, message: "Failed to create source" }, 500);
@@ -335,6 +342,13 @@ export const confirmFileUpload = async (c: SourceContext) => {
         return c.json(
           { success: false, message: result.message },
           422,
+        );
+      }
+
+      if (result.reason === "duplicate") {
+        return c.json(
+          { success: false, message: result.message },
+          409,
         );
       }
 

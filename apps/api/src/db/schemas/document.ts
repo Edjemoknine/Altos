@@ -31,6 +31,7 @@ export const documents = pgTable(
     url: text("url"),
     content: text("content").notNull(),
     contentHash: text("content_hash").notNull(),
+    dedupeHash: text("dedupe_hash"),
     metadata: jsonb("metadata")
       .$type<Record<string, unknown>>()
       .default({})
@@ -46,6 +47,10 @@ export const documents = pgTable(
     uniqueIndex("documents_source_external_id_unique")
       .on(table.sourceId, table.externalId)
       .where(sql`${table.externalId} is not null`),
+    uniqueIndex("documents_agent_dedupe_hash_unique").on(
+      table.agentId,
+      table.dedupeHash,
+    ),
     check(
       "documents_external_id_not_empty_check",
       sql`${table.externalId} is null or length(${table.externalId}) > 0`,

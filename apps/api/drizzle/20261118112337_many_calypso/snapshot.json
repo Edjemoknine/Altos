@@ -1,0 +1,99 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "9ee1b3a0-96d3-41b6-b41b-08aee4858c62",
+  "prevIds": [
+    "5ff3a918-8e63-4a8f-909e-c8f2d9f7268f"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "documents",
+        "dedupe_hash"
+      ],
+      "writes": [
+        "s|col|public.documents.dedupe_hash",
+        "n|col|public.documents.dedupe_hash",
+        "e|col|public.documents.dedupe_hash"
+      ],
+      "reads": [
+        "n|tbl|public.documents",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "documents",
+        "documents_agent_dedupe_hash_unique"
+      ],
+      "writes": [
+        "s|idx|public.documents_agent_dedupe_hash_unique",
+        "n|idx|public.documents_agent_dedupe_hash_unique",
+        "e|idx|public.documents_agent_dedupe_hash_unique",
+        "n|rel|public.documents_agent_dedupe_hash_unique"
+      ],
+      "reads": [
+        "n|tbl|public.documents",
+        "n|sch|public",
+        "n|col|public.documents.agent_id",
+        "n|col|public.documents.dedupe_hash"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "documents",
+        "name": "dedupe_hash",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "documents",
+        "name": "documents_agent_dedupe_hash_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "agent_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "dedupe_hash",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    }
+  ]
+}

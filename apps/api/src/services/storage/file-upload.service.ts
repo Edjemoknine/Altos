@@ -93,6 +93,74 @@ type SourceScope = {
   sourceId: string;
 };
 
+async function markSourceCompleted(
+  sourceId: string,
+  scope: SourceScope,
+  metadata: Record<string, unknown>,
+  uploadedSize: number,
+  uploadedContentType: string,
+) {
+  const [updatedSource] = await db
+    .update(sources)
+    .set({
+      status: "completed",
+      metadata: {
+        ...metadata,
+        uploadedSize,
+        uploadedContentType,
+        uploadedAt: new Date().toISOString(),
+      },
+    })
+    .where(
+      and(
+        eq(sources.id, sourceId),
+        eq(sources.organizationId, scope.organizationId),
+        eq(sources.agentId, scope.agentId),
+        eq(sources.status, "pending"),
+      ),
+    )
+    .returning();
+
+  if (!updatedSource) {
+    const [completedSource] = await db
+      .select()
+      .from(sources)
+      .where(
+        and(
+          eq(sources.id, sourceId),
+          eq(sources.organizationId, scope.organizationId),
+          eq(sources.agentId, scope.agentId),
+          eq(sources.status, "completed"),
+        ),
+      )
+      .limit(1);
+
+    if (completedSource) {
+      return completedSource;
+    }
+
+    throw new Error("Failed to confirm file upload");
+  }
+
+  return updatedSource;
+}
+
+async function removeDuplicateUpload(
+  storageKey: string,
+  scope: SourceScope,
+) {
+  await deleteUploadedObject(storageKey);
+  await db
+    .delete(sources)
+    .where(
+      and(
+        eq(sources.id, scope.sourceId),
+        eq(sources.organizationId, scope.organizationId),
+        eq(sources.agentId, scope.agentId),
+      ),
+    );
+}
+
 export async function createSourceUploadUrl({
   organizationId,
   agentId,
@@ -151,6 +219,18 @@ export async function completeFileUpload(scope: SourceScope) {
 
   if (!source || !source.storageKey) {
     return { success: false as const, reason: "not_found" as const };
+  }
+
+  if (source.status === "completed") {
+    const [document] = await db
+      .select({ id: documents.id })
+      .from(documents)
+      .where(eq(documents.sourceId, source.id))
+      .limit(1);
+
+    if (document) {
+      return { success: true as const, source };
+    }
   }
 
   if (source.status !== "pending") {
@@ -250,8 +330,52 @@ export async function completeFileUpload(scope: SourceScope) {
   }
 
   const contentHash = createHash("sha256").update(content).digest("hex");
+  const [sameSourceDocument] = await db
+    .select({ id: documents.id, sourceId: documents.sourceId })
+    .from(documents)
+    .where(
+      and(
+        eq(documents.agentId, scope.agentId),
+        eq(documents.contentHash, contentHash),
+        eq(documents.sourceId, source.id),
+      ),
+    )
+    .limit(1);
 
-  await db
+  if (sameSourceDocument) {
+    const updatedSource = await markSourceCompleted(
+      source.id,
+      scope,
+      metadata,
+      actualSize,
+      expectedContentType,
+    );
+
+    return { success: true as const, source: updatedSource };
+  }
+
+  const [existingDocument] = await db
+    .select({ id: documents.id, sourceId: documents.sourceId })
+    .from(documents)
+    .where(
+      and(
+        eq(documents.agentId, scope.agentId),
+        eq(documents.contentHash, contentHash),
+      ),
+    )
+    .limit(1);
+
+  if (existingDocument) {
+    await removeDuplicateUpload(source.storageKey, scope);
+
+    return {
+      success: false as const,
+      reason: "duplicate" as const,
+      message: "An identical document already exists for this agent.",
+    };
+  }
+
+  const [document] = await db
     .insert(documents)
     .values({
       organizationId: scope.organizationId,
@@ -261,37 +385,73 @@ export async function completeFileUpload(scope: SourceScope) {
       title: source.name,
       content,
       contentHash,
+      dedupeHash: contentHash,
       metadata: {
         originalFilename: source.originalFilename,
         contentType: expectedContentType,
       },
     })
-    .onConflictDoNothing();
+    .onConflictDoNothing()
+    .returning({ id: documents.id });
 
-  const [updatedSource] = await db
-    .update(sources)
-    .set({
-      status: "completed",
-      metadata: {
-        ...metadata,
-        uploadedSize: actualSize,
-        uploadedContentType: actualContentType,
-        uploadedAt: new Date().toISOString(),
-      },
-    })
-    .where(
-      and(
-        eq(sources.id, source.id),
-        eq(sources.organizationId, scope.organizationId),
-        eq(sources.agentId, scope.agentId),
-        eq(sources.status, "pending"),
-      ),
-    )
-    .returning();
+  if (!document) {
+    const [sameSourceDocument] = await db
+      .select({ sourceId: documents.sourceId })
+      .from(documents)
+      .where(
+        and(
+          eq(documents.agentId, scope.agentId),
+          eq(documents.contentHash, contentHash),
+          eq(documents.sourceId, source.id),
+        ),
+      )
+      .limit(1);
 
-  if (!updatedSource) {
-    throw new Error("Failed to confirm file upload");
+    if (sameSourceDocument) {
+      const updatedSource = await markSourceCompleted(
+        source.id,
+        scope,
+        metadata,
+        actualSize,
+        expectedContentType,
+      );
+
+      return { success: true as const, source: updatedSource };
+    }
+
+    const [duplicateDocument] = await db
+      .select({ sourceId: documents.sourceId })
+      .from(documents)
+      .where(
+        and(
+          eq(documents.agentId, scope.agentId),
+          eq(documents.contentHash, contentHash),
+        ),
+      )
+      .limit(1);
+
+    if (!duplicateDocument) {
+      throw new Error("Failed to create uploaded document");
+    }
+
+    if (duplicateDocument.sourceId !== source.id) {
+      await removeDuplicateUpload(source.storageKey, scope);
+
+      return {
+        success: false as const,
+        reason: "duplicate" as const,
+        message: "An identical document already exists for this agent.",
+      };
+    }
   }
+
+  const updatedSource = await markSourceCompleted(
+    source.id,
+    scope,
+    metadata,
+    actualSize,
+    expectedContentType,
+  );
 
   return {
     success: true as const,

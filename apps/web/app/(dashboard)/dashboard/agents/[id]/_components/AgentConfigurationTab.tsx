@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Save } from "lucide-react";
@@ -18,30 +18,66 @@ import {
   textareaClassName,
 } from "../../../../_components/dashboard-ui";
 import { agentConfigurationSchema } from "@/schemas/agents";
-import type {
-  AgentConfigurationFormValues,
-  DemoAgent,
-} from "@/types/agents";
+import type { Agent, AgentConfigurationFormValues } from "@/types/agents";
+import { getAgentTone } from "@/utils";
+import { useUpdateAgent } from "@/services/agent.service";
 
-export function AgentConfigurationTab({ agent }: { agent: DemoAgent }) {
+function getConfigurationValues(agent: Agent): AgentConfigurationFormValues {
+  return {
+    name: agent.name,
+    tone: getAgentTone(agent),
+    description: agent.description,
+    website:
+      typeof agent.settings.website === "string"
+        ? agent.settings.website
+        : "",
+    prompt: agent.instructions,
+  };
+}
+
+export function AgentConfigurationTab({ agent }: { agent: Agent }) {
   const [savedNotice, setSavedNotice] = useState("");
+  const [saveError, setSaveError] = useState("");
+  const updateAgentMutation = useUpdateAgent(agent.organizationId, agent.id);
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<AgentConfigurationFormValues>({
     resolver: zodResolver(agentConfigurationSchema),
-    defaultValues: {
-      name: agent.name,
-      tone: agent.tone,
-      description: agent.description,
-      website: `https://${agent.website}`,
-      prompt: `You are ${agent.name}, a ${agent.tone.toLowerCase()} customer support assistant for Acme. Use the provided knowledge base to answer clearly and accurately. If you don't know an answer, say so and offer to connect the customer with a person.`,
-    },
+    defaultValues: getConfigurationValues(agent),
   });
 
-  function saveConfiguration() {
-    setSavedNotice("Agent configuration saved in this demo.");
+  useEffect(() => {
+    reset(getConfigurationValues(agent));
+  }, [agent, reset]);
+
+  async function saveConfiguration(values: AgentConfigurationFormValues) {
+    setSavedNotice("");
+    setSaveError("");
+
+    try {
+      const updatedAgent = await updateAgentMutation.mutateAsync({
+        name: values.name,
+        description: values.description,
+        instructions: values.prompt,
+        settings: {
+          ...agent.settings,
+          website: values.website,
+          tone: values.tone,
+        },
+      });
+
+      reset(getConfigurationValues(updatedAgent));
+      setSavedNotice("Agent configuration saved.");
+    } catch (error) {
+      setSaveError(
+        error instanceof Error
+          ? error.message
+          : "Unable to save agent configuration.",
+      );
+    }
   }
 
   return (
@@ -66,15 +102,13 @@ export function AgentConfigurationTab({ agent }: { agent: DemoAgent }) {
                 aria-invalid={Boolean(errors.name)}
                 aria-describedby={errors.name ? "detail-name-error" : undefined}
                 className={inputClassName}
+                disabled={updateAgentMutation.isPending}
                 id="detail-name"
                 {...register("name")}
               />
             </Field>
             {errors.name && (
-              <p
-                className="mt-1 text-xs text-[#b75d47]"
-                id="detail-name-error"
-              >
+              <p className="mt-1 text-xs text-[#b75d47]" id="detail-name-error">
                 {errors.name.message}
               </p>
             )}
@@ -82,6 +116,7 @@ export function AgentConfigurationTab({ agent }: { agent: DemoAgent }) {
           <Field id="detail-tone" label="Conversation tone">
             <NativeSelect
               className="w-full"
+              disabled={updateAgentMutation.isPending}
               id="detail-tone"
               {...register("tone")}
             >
@@ -98,6 +133,7 @@ export function AgentConfigurationTab({ agent }: { agent: DemoAgent }) {
           <Field id="detail-description" label="Description">
             <Input
               className={inputClassName}
+              disabled={updateAgentMutation.isPending}
               id="detail-description"
               {...register("description")}
             />
@@ -120,6 +156,7 @@ export function AgentConfigurationTab({ agent }: { agent: DemoAgent }) {
                 errors.website ? "detail-website-error" : undefined
               }
               className={inputClassName}
+              disabled={updateAgentMutation.isPending}
               id="detail-website"
               type="url"
               {...register("website")}
@@ -142,6 +179,7 @@ export function AgentConfigurationTab({ agent }: { agent: DemoAgent }) {
           >
             <Textarea
               className={`${textareaClassName} min-h-40 resize-y`}
+              disabled={updateAgentMutation.isPending}
               id="system-prompt"
               rows={6}
               {...register("prompt")}
@@ -154,11 +192,18 @@ export function AgentConfigurationTab({ agent }: { agent: DemoAgent }) {
           )}
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#eff1ec] pt-4">
-          <p aria-live="polite" className="text-xs text-[#5f7e49]">
-            {savedNotice}
-          </p>
-          <PrimaryButton type="submit">
-            <Save aria-hidden="true" className="size-3.5" /> Save changes
+          <div aria-live="polite" className="text-xs">
+            {saveError ? (
+              <p className="text-[#b75d47]" role="alert">
+                {saveError}
+              </p>
+            ) : (
+              <p className="text-[#5f7e49]">{savedNotice}</p>
+            )}
+          </div>
+          <PrimaryButton disabled={updateAgentMutation.isPending} type="submit">
+            <Save aria-hidden="true" className="size-3.5" />
+            {updateAgentMutation.isPending ? "Saving..." : "Save changes"}
           </PrimaryButton>
         </div>
       </form>

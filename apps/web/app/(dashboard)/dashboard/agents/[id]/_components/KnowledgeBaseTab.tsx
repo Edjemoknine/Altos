@@ -4,7 +4,26 @@ import { useState, type ChangeEvent } from "react";
 import { useParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { Bot, Check, FileText, Globe2, Play, Upload } from "lucide-react";
+import {
+  AlertTriangle,
+  Bot,
+  Check,
+  FileText,
+  Globe2,
+  LoaderCircle,
+  Play,
+  Trash2,
+  Upload,
+} from "lucide-react";
+import { Button } from "@repo/ui/components/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@repo/ui/components/dialog";
 import { Input } from "@repo/ui/components/input";
 import { authClient } from "@/auth/auth-client";
 import {
@@ -17,6 +36,7 @@ import { documentFileSchema, scrapeWebsiteSchema } from "@/schemas/agents";
 import type { ScrapeWebsiteFormValues } from "@/types/agents";
 import {
   useAgentSources,
+  useDeleteAgentSource,
   useUploadAgentDocument,
 } from "@/services/source.service";
 
@@ -28,10 +48,15 @@ export function KnowledgeBaseTab() {
   } = authClient.useActiveOrganization();
   const organizationId = activeOrganization?.id;
   const sourcesQuery = useAgentSources(organizationId, agentId);
+  const deleteSourceMutation = useDeleteAgentSource(organizationId, agentId);
   const uploadMutation = useUploadAgentDocument(organizationId, agentId);
   const [scrapeStatus, setScrapeStatus] = useState("");
   const [fileName, setFileName] = useState("");
   const [fileStatus, setFileStatus] = useState("");
+  const [sourceToDelete, setSourceToDelete] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const {
     register,
     handleSubmit,
@@ -234,6 +259,31 @@ export function KnowledgeBaseTab() {
                   <span className="text-[10px] capitalize text-[#879087]">
                     {source.status}
                   </span>
+                  <Button
+                    aria-label={`Delete ${source.originalFilename ?? source.name}`}
+                    className="size-8 shrink-0 rounded-lg text-[#9b7771] hover:bg-[#fff1ee] hover:text-[#a94336]"
+                    disabled={deleteSourceMutation.isPending}
+                    onClick={() => {
+                      deleteSourceMutation.reset();
+                      setSourceToDelete({
+                        id: source.id,
+                        name: source.originalFilename ?? source.name,
+                      });
+                    }}
+                    size="icon-sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    {deleteSourceMutation.isPending &&
+                    deleteSourceMutation.variables === source.id ? (
+                      <LoaderCircle
+                        aria-hidden="true"
+                        className="size-3.5 animate-spin"
+                      />
+                    ) : (
+                      <Trash2 aria-hidden="true" className="size-3.5" />
+                    )}
+                  </Button>
                 </li>
               ))}
             </ul>
@@ -244,6 +294,88 @@ export function KnowledgeBaseTab() {
           )}
         </div>
       </Panel>
+      <Dialog
+        open={sourceToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open && !deleteSourceMutation.isPending) {
+            setSourceToDelete(null);
+            deleteSourceMutation.reset();
+          }
+        }}
+      >
+        <DialogContent
+          className="gap-0 rounded-2xl border border-[#e7eae3] bg-[#fdfefc] p-0 text-[#17221b] shadow-2xl sm:max-w-md"
+          showCloseButton={!deleteSourceMutation.isPending}
+        >
+          <DialogHeader className="border-b border-[#eff1ec] px-6 py-5">
+            <div className="flex items-start gap-3 pr-7">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#fff1ee] text-[#ad5144]">
+                <AlertTriangle aria-hidden="true" className="size-5" />
+              </span>
+              <div>
+                <DialogTitle className="font-heading text-base font-semibold text-[#26332a]">
+                  Delete source?
+                </DialogTitle>
+                <DialogDescription className="mt-1 text-xs leading-5 text-[#788278]">
+                  This permanently deletes{" "}
+                  <span className="font-semibold text-[#455047]">
+                    {sourceToDelete?.name}
+                  </span>
+                  , its R2 file, documents, and document chunks. This action
+                  cannot be undone.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          <div className="p-6">
+            {deleteSourceMutation.isError && (
+              <p
+                aria-live="assertive"
+                className="mb-4 rounded-lg border border-[#f0d7d1] bg-[#fff7f5] px-3 py-2 text-xs text-[#a95140]"
+                role="alert"
+              >
+                {deleteSourceMutation.error.message}
+              </p>
+            )}
+            <DialogFooter className="flex-row justify-end gap-2">
+              <Button
+                className="rounded-xl border-[#e3e8df] bg-white px-3.5 text-xs font-semibold text-[#455047]"
+                disabled={deleteSourceMutation.isPending}
+                onClick={() => {
+                  setSourceToDelete(null);
+                  deleteSourceMutation.reset();
+                }}
+                type="button"
+                variant="outline"
+              >
+                Cancel
+              </Button>
+              <Button
+                className="rounded-xl bg-[#a94336] px-3.5 text-xs font-semibold text-white hover:bg-[#8f372d]"
+                disabled={deleteSourceMutation.isPending}
+                onClick={() => {
+                  if (sourceToDelete) {
+                    deleteSourceMutation.mutate(sourceToDelete.id, {
+                      onSuccess: () => setSourceToDelete(null),
+                    });
+                  }
+                }}
+                type="button"
+              >
+                {deleteSourceMutation.isPending ? (
+                  <LoaderCircle
+                    aria-hidden="true"
+                    className="size-3.5 animate-spin"
+                  />
+                ) : (
+                  <Trash2 aria-hidden="true" className="size-3.5" />
+                )}
+                {deleteSourceMutation.isPending ? "Deleting..." : "Delete source"}
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

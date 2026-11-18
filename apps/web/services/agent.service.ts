@@ -19,6 +19,8 @@ export const agentQueryKeys = {
   all: ["agents"] as const,
   list: (organizationId: string | undefined) =>
     [...agentQueryKeys.all, organizationId] as const,
+  detail: (organizationId: string | undefined, agentId: string | undefined) =>
+    [...agentQueryKeys.all, organizationId, "detail", agentId] as const,
 };
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -66,6 +68,106 @@ export function useAgents(organizationId: string | undefined) {
     },
     enabled: Boolean(organizationId),
     staleTime: 30_000,
+  });
+}
+
+export async function getAgent(
+  organizationId: string,
+  agentId: string,
+): Promise<Agent> {
+  requireApiUrl();
+
+  try {
+    const response = await api.get<ApiResponse<Agent>>(
+      `/api/organizations/${encodeURIComponent(organizationId)}/agents/${encodeURIComponent(agentId)}`,
+    );
+    const result = response.data;
+
+    if (!result.success || !result.data) {
+      throw new Error(result.message ?? "Unable to load the agent.");
+    }
+
+    return result.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Unable to load the agent."));
+  }
+}
+
+export function useAgent(
+  organizationId: string | undefined,
+  agentId: string | undefined,
+) {
+  return useQuery({
+    queryKey: agentQueryKeys.detail(organizationId, agentId),
+    queryFn: () => {
+      if (!organizationId || !agentId) {
+        throw new Error("Select an organization and agent to load its details.");
+      }
+
+      return getAgent(organizationId, agentId);
+    },
+    enabled: Boolean(organizationId && agentId),
+  });
+}
+
+export type UpdateAgentInput = Pick<
+  Agent,
+  "name" | "description" | "instructions" | "settings"
+>;
+
+export async function updateAgent(
+  organizationId: string,
+  agentId: string,
+  payload: UpdateAgentInput,
+): Promise<Agent> {
+  requireApiUrl();
+
+  try {
+    const response = await api.patch<ApiResponse<Agent>>(
+      `/api/organizations/${encodeURIComponent(organizationId)}/agents/${encodeURIComponent(agentId)}`,
+      payload,
+    );
+    const result = response.data;
+
+    if (!result.success || !result.data) {
+      throw new Error(result.message ?? "Unable to update the agent.");
+    }
+
+    return result.data;
+  } catch (error) {
+    throw new Error(
+      getErrorMessage(error, "Unable to update the agent. Please try again."),
+    );
+  }
+}
+
+export function useUpdateAgent(
+  organizationId: string | undefined,
+  agentId: string | undefined,
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: UpdateAgentInput) => {
+      if (!organizationId || !agentId) {
+        throw new Error("Select an organization and agent before saving.");
+      }
+
+      return updateAgent(organizationId, agentId, payload);
+    },
+    onSuccess: (updatedAgent) => {
+      queryClient.setQueryData(
+        agentQueryKeys.detail(organizationId, agentId),
+        updatedAgent,
+      );
+      queryClient.setQueryData<Agent[]>(
+        agentQueryKeys.list(organizationId),
+        (agents) =>
+          agents?.map((agent) =>
+            agent.id === updatedAgent.id ? updatedAgent : agent,
+          ),
+      );
+    },
   });
 }
 

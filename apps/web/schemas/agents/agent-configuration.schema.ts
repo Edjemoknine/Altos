@@ -4,7 +4,7 @@ import { agentToneSchema } from "./agent.schema";
 export const agentConfigurationSchema = z.object({
   name: z.string().trim().min(1, "Enter an agent name."),
   tone: agentToneSchema,
-  description: z.string(),
+  description: z.string().trim().min(1, "Enter a description."),
   website: z.string().trim().refine((value) => {
     if (!value) return true;
     try {
@@ -14,5 +14,5 @@ export const agentConfigurationSchema = z.object({
       return false;
     }
   }, "Enter a valid HTTP or HTTPS website URL."),
-  prompt: z.string(),
+  prompt: z.string().trim().min(1, "Enter a base system prompt."),
 });
