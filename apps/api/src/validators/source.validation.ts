@@ -1,9 +1,22 @@
-import type { CreateSourceInput } from "../types/source.ts";
-import type { SourceType } from "../db/schemas/source.ts";
+import type {
+  CreateFileUploadInput,
+  CreateSourceInput,
+} from "../types/source.ts";
 
-export type CreateSourceValidationResult =
-  | { success: true; data: CreateSourceInput }
+export type ValidationResult<T> =
+  | { success: true; data: T }
   | { success: false; message: string; status: 400 | 413 };
+
+const MAX_TEXT_SIZE = 1_000_000;
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+const FILE_CONTENT_TYPES: Record<string, string> = {
+  csv: "text/csv",
+  doc: "application/msword",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  pdf: "application/pdf",
+  txt: "text/plain",
+};
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -11,18 +24,10 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const getText = (value: unknown): string | null =>
   typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
 
-const getSourceType = (value: unknown): SourceType | null => {
-  if (value === "website" || value === "file" || value === "text") {
-    return value;
-  }
-
-  return null;
-};
-
-const invalid = (
+const invalid = <T>(
   message: string,
   status: 400 | 413 = 400,
-): CreateSourceValidationResult => ({
+): ValidationResult<T> => ({
   success: false,
   message,
   status,
@@ -30,15 +35,15 @@ const invalid = (
 
 export const parseCreateSourceBody = (
   body: unknown,
-): CreateSourceValidationResult => {
+): ValidationResult<CreateSourceInput> => {
   if (!isRecord(body)) {
     return invalid("Invalid request body");
   }
 
   const name = getText(body.name);
-  const type = getSourceType(body.type);
+  const type = body.type;
 
-  if (!name || !type) {
+  if (!name || (type !== "website" && type !== "text")) {
     return invalid("A valid name and source type are required");
   }
 
@@ -46,10 +51,8 @@ export const parseCreateSourceBody = (
     name,
     type,
     url: null,
-    storageKey: null,
-    originalFilename: null,
     content: null,
-    metadata: isRecord(body.metadata) ? body.metadata : {},
+    metadata: {},
   };
 
   if (type === "website") {
@@ -67,35 +70,107 @@ export const parseCreateSourceBody = (
       return invalid("Invalid website URL");
     }
 
-    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+    if (!["http:", "https:"].includes(parsedUrl.protocol)) {
       return invalid("Only HTTP and HTTPS URLs are supported");
     }
 
     input.url = parsedUrl.toString();
   }
 
-  if (type === "file") {
-    input.storageKey = getText(body.storageKey);
-    input.originalFilename = getText(body.originalFilename);
-
-    if (!input.storageKey || !input.originalFilename) {
-      return invalid(
-        "storageKey and originalFilename are required for file sources",
-      );
-    }
-  }
-
   if (type === "text") {
-    input.content = getText(body.content);
+    const content = getText(body.content);
 
-    if (!input.content) {
+    if (!content) {
       return invalid("Text content is required");
     }
 
-    if (input.content.length > 1_000_000) {
+    if (content.length > MAX_TEXT_SIZE) {
       return invalid("Text content exceeds the 1 MB limit", 413);
     }
+
+    input.content = content;
   }
 
   return { success: true, data: input };
+};
+
+export type FileUploadValidationResult =
+  | { success: true; data: CreateFileUploadInput }
+  | { success: false; message: string; status: 400 | 413 };
+
+export const parseCreateFileUploadBody = (
+  body: unknown,
+): FileUploadValidationResult => {
+  if (!isRecord(body)) {
+    return {
+      success: false,
+      message: "Invalid request body",
+      status: 400,
+    };
+  }
+
+  const name = getText(body.name);
+  const originalFilename = getText(body.originalFilename);
+  const contentType = getText(body.contentType);
+  const size = body.size;
+
+  if (!name || !originalFilename || !contentType) {
+    return {
+      success: false,
+      message: "Name, filename and content type are required",
+      status: 400,
+    };
+  }
+
+  if (typeof size !== "number" || !Number.isSafeInteger(size) || size <= 0) {
+    return {
+      success: false,
+      message: "Invalid file size",
+      status: 400,
+    };
+  }
+
+  if (size > MAX_FILE_SIZE) {
+    return {
+      success: false,
+      message: "File exceeds the 10 MB limit",
+      status: 413,
+    };
+  }
+
+  const extension = originalFilename.split(".").pop()?.toLowerCase();
+  const expectedContentType =
+    extension && Object.hasOwn(FILE_CONTENT_TYPES, extension)
+      ? FILE_CONTENT_TYPES[extension]
+      : null;
+
+  if (!expectedContentType || contentType !== expectedContentType) {
+    return {
+      success: false,
+      message: "Unsupported file type",
+      status: 400,
+    };
+  }
+
+  if (
+    originalFilename.includes("/") ||
+    originalFilename.includes("\\") ||
+    originalFilename.includes("\0")
+  ) {
+    return {
+      success: false,
+      message: "Invalid filename",
+      status: 400,
+    };
+  }
+
+  return {
+    success: true,
+    data: {
+      name,
+      originalFilename,
+      contentType,
+      size,
+    },
+  };
 };

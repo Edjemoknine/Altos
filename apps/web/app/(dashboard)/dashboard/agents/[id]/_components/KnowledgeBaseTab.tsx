@@ -1,27 +1,34 @@
 "use client";
 
 import { useState, type ChangeEvent } from "react";
+import { useParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import {
-  Bot,
-  Check,
-  FileText,
-  Globe2,
-  Play,
-  Upload,
-} from "lucide-react";
+import { Bot, Check, FileText, Globe2, Play, Upload } from "lucide-react";
 import { Input } from "@repo/ui/components/input";
+import { authClient } from "@/auth/auth-client";
 import {
   Field,
   inputClassName,
   Panel,
   PrimaryButton,
 } from "../../../../_components/dashboard-ui";
-import { scrapeWebsiteSchema, textFileSchema } from "@/schemas/agents";
+import { documentFileSchema, scrapeWebsiteSchema } from "@/schemas/agents";
 import type { ScrapeWebsiteFormValues } from "@/types/agents";
+import {
+  useAgentSources,
+  useUploadAgentDocument,
+} from "@/services/source.service";
 
 export function KnowledgeBaseTab() {
+  const { id: agentId } = useParams<{ id: string }>();
+  const {
+    data: activeOrganization,
+    isPending: isOrganizationPending,
+  } = authClient.useActiveOrganization();
+  const organizationId = activeOrganization?.id;
+  const sourcesQuery = useAgentSources(organizationId, agentId);
+  const uploadMutation = useUploadAgentDocument(organizationId, agentId);
   const [scrapeStatus, setScrapeStatus] = useState("");
   const [fileName, setFileName] = useState("");
   const [fileStatus, setFileStatus] = useState("");
@@ -40,11 +47,11 @@ export function KnowledgeBaseTab() {
     );
   }
 
-  function addDocument(event: ChangeEvent<HTMLInputElement>) {
+  async function addDocument(event: ChangeEvent<HTMLInputElement>) {
     const input = event.currentTarget;
     const file = input.files?.[0];
     if (!file) return;
-    const result = textFileSchema.safeParse(file);
+    const result = documentFileSchema.safeParse(file);
     if (!result.success) {
       setFileName("");
       setFileStatus(result.error.issues[0]?.message ?? "Invalid document.");
@@ -53,11 +60,15 @@ export function KnowledgeBaseTab() {
     }
 
     setFileName(file.name);
-    setFileStatus("Processing document…");
-    window.setTimeout(
-      () => setFileStatus("Ready · document processed in this demo."),
-      900,
-    );
+    setFileStatus("Uploading document…");
+    try {
+      await uploadMutation.mutateAsync(file);
+      setFileStatus("Ready · document uploaded and saved.");
+    } catch (error) {
+      setFileStatus(
+        error instanceof Error ? error.message : "Unable to upload document.",
+      );
+    }
     input.value = "";
   }
 
@@ -118,28 +129,34 @@ export function KnowledgeBaseTab() {
             <FileText className="size-4" />
           </span>
           <h2 className="mt-3 text-sm font-semibold text-[#27342b]">
-            Upload a text document
+            Upload documents
           </h2>
           <p className="mt-1 text-xs leading-5 text-[#879087]">
-            Add a plain-text document to your agent’s knowledge base.
+            Add PDF, Word, CSV, or plain-text files to your agent’s knowledge
+            base.
           </p>
         </div>
         <div className="p-5 sm:p-6">
           <label className="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-[#dce3d7] bg-[#fbfcfa] px-4 text-center transition hover:border-[#a8be91] hover:bg-[#f8faf5]">
             <Input
-              accept=".txt,text/plain"
+              accept=".pdf,.doc,.docx,.csv,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv,text/plain"
               className="sr-only"
               onChange={addDocument}
               type="file"
+              disabled={
+                uploadMutation.isPending ||
+                isOrganizationPending ||
+                !organizationId
+              }
             />
             <span className="flex size-9 items-center justify-center rounded-xl bg-white text-[#7c8c73] shadow-sm">
               <Upload className="size-4" />
             </span>
             <span className="mt-2 text-xs font-semibold text-[#536052]">
-              Choose a .txt file
+              Choose a document
             </span>
             <span className="mt-1 text-[10px] text-[#9aa398]">
-              Plain text documents only
+              PDF, DOC, DOCX, CSV, or TXT · max 10 MB. PDFs need selectable text.
             </span>
           </label>
           {fileName && (
@@ -148,17 +165,17 @@ export function KnowledgeBaseTab() {
               <span className="min-w-0 flex-1 truncate text-xs font-medium text-[#4d5b4e]">
                 {fileName}
               </span>
-              {fileStatus.startsWith("Ready") ? (
-                <Check className="size-4 text-[#78a050]" />
-              ) : (
+              {uploadMutation.isPending ? (
                 <span className="size-3 animate-spin rounded-full border-2 border-[#dbe4d1] border-t-[#7c9f57]" />
-              )}
+              ) : fileStatus.startsWith("Ready") ? (
+                <Check className="size-4 text-[#78a050]" />
+              ) : null}
             </div>
           )}
           {fileStatus && (
             <p
               aria-live="polite"
-              className={`mt-2 text-[11px] ${fileStatus.startsWith("Only") ? "text-[#b75d47]" : "text-[#63804b]"}`}
+              className={`mt-2 text-[11px] ${fileStatus.startsWith("Ready") || uploadMutation.isPending ? "text-[#63804b]" : "text-[#b75d47]"}`}
             >
               {fileStatus}
             </p>
@@ -172,15 +189,59 @@ export function KnowledgeBaseTab() {
           </span>
           <div>
             <h2 className="text-sm font-semibold text-[#27342b]">
-              Indexed sources
+              Sources
             </h2>
             <p className="mt-1 text-xs text-[#879087]">
               Sources currently attached to this agent.
             </p>
           </div>
         </div>
-        <div className="border-t border-[#eff1ec] px-5 py-4 text-xs text-[#929b90] sm:px-6">
-          No sources have been indexed yet.
+        <div className="border-t border-[#eff1ec] px-5 py-4 sm:px-6">
+          {isOrganizationPending ? (
+            <p className="text-xs text-[#929b90]">
+              Loading your organization…
+            </p>
+          ) : !organizationId ? (
+            <p className="text-xs text-[#929b90]">
+              Select an organization to view its sources.
+            </p>
+          ) : sourcesQuery.isPending ? (
+            <p className="text-xs text-[#929b90]">Loading sources…</p>
+          ) : sourcesQuery.isError ? (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p aria-live="polite" className="text-xs text-[#b75d47]">
+                {sourcesQuery.error.message}
+              </p>
+              <button
+                className="text-xs font-semibold text-[#536d43] underline"
+                onClick={() => void sourcesQuery.refetch()}
+                type="button"
+              >
+                Try again
+              </button>
+            </div>
+          ) : sourcesQuery.data?.length ? (
+            <ul className="divide-y divide-[#eff1ec]">
+              {sourcesQuery.data.map((source) => (
+                <li
+                  className="flex flex-wrap items-center gap-2 py-3 first:pt-0 last:pb-0"
+                  key={source.id}
+                >
+                  <FileText className="size-4 shrink-0 text-[#7b896f]" />
+                  <span className="min-w-0 flex-1 truncate text-xs font-medium text-[#4d5b4e]">
+                    {source.originalFilename ?? source.name}
+                  </span>
+                  <span className="text-[10px] capitalize text-[#879087]">
+                    {source.status}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs text-[#929b90]">
+              No sources have been added yet.
+            </p>
+          )}
         </div>
       </Panel>
     </div>

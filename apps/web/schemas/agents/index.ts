@@ -5,6 +5,6 @@ export {
 export { agentConfigurationSchema } from "./agent-configuration.schema";
 export {
   scrapeWebsiteSchema,
-  textFileSchema,
+  documentFileSchema,
 } from "./knowledge-base.schema";
 export { testAgentMessageSchema } from "./test-agent.schema";

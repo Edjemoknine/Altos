@@ -11,10 +11,23 @@ export const scrapeWebsiteSchema = z.object({
   }, "Enter a valid HTTP or HTTPS website URL."),
 });
 
-export const textFileSchema = z.custom<File>(
+const supportedDocumentExtensions = new Set([
+  ".csv",
+  ".doc",
+  ".docx",
+  ".pdf",
+  ".txt",
+]);
+const MAX_DOCUMENT_SIZE = 10 * 1024 * 1024;
+
+export const documentFileSchema = z.custom<File>(
   (value) =>
     typeof File !== "undefined" &&
     value instanceof File &&
-    value.name.toLowerCase().endsWith(".txt"),
-  "Only .txt files are supported.",
+    value.size > 0 &&
+    value.size <= MAX_DOCUMENT_SIZE &&
+    [...supportedDocumentExtensions].some((extension) =>
+      value.name.toLowerCase().endsWith(extension),
+    ),
+  "Choose a PDF, DOC, DOCX, CSV, or TXT file under 10 MB.",
 );
