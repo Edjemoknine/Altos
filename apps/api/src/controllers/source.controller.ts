@@ -3,10 +3,7 @@ import type { Context } from "hono";
 
 import { db } from "../db/index.ts";
 import { sources } from "../db/schema.ts";
-import {
-  DuplicateDocumentError,
-  getAgent,
-} from "../helpers/source.service.ts";
+import { DuplicateDocumentError, getAgent } from "../helpers/source.service.ts";
 import type { OrganizationEnv } from "../middlewares/organization.middleware.ts";
 import {
   completeFileUpload,
@@ -15,7 +12,7 @@ import {
   retryFailedFileUpload,
 } from "../services/storage/file-upload.service.ts";
 import { deleteUploadedObject } from "../services/storage/r2.service.ts";
-
+import { createAndDispatchIngestionJob } from "../services/ingestion/ingestion-dispatch.service.ts";
 import {
   parseCreateFileUploadBody,
   parseCreateSourceBody,
@@ -145,7 +142,6 @@ export const createSource = async (c: SourceContext) => {
 
     return c.json({ success: false, message: "Failed to create source" }, 500);
   }
-
 };
 
 // DELETE /organizations/:organizationId/agents/:agentId/sources/:sourceId
@@ -340,17 +336,11 @@ export const confirmFileUpload = async (c: SourceContext) => {
       }
 
       if (result.reason === "extraction_failed") {
-        return c.json(
-          { success: false, message: result.message },
-          422,
-        );
+        return c.json({ success: false, message: result.message }, 422);
       }
 
       if (result.reason === "duplicate") {
-        return c.json(
-          { success: false, message: result.message },
-          409,
-        );
+        return c.json({ success: false, message: result.message }, 409);
       }
 
       return c.json(
@@ -362,10 +352,24 @@ export const confirmFileUpload = async (c: SourceContext) => {
       );
     }
 
+    // Extraction succeeded. Now enqueue background ingestion.
+    const job = await createAndDispatchIngestionJob({
+      organizationId,
+      agentId,
+      sourceId,
+    });
+
     return c.json({
       success: true,
-      message: "File uploaded successfully",
-      data: result.source,
+      message: "File uploaded successfully. Processing has started.",
+      data: {
+        source: result.source,
+        ingestionJob: {
+          id: job.id,
+          status: job.status,
+          progress: job.progress,
+        },
+      },
     });
   } catch (error) {
     console.error("Confirm file upload error:", error);
@@ -416,7 +420,10 @@ export const retrySourceProcessing = async (c: SourceContext) => {
 
       if (result.reason === "not_uploaded") {
         return c.json(
-          { success: false, message: "The original file is no longer available" },
+          {
+            success: false,
+            message: "The original file is no longer available",
+          },
           409,
         );
       }
@@ -445,10 +452,23 @@ export const retrySourceProcessing = async (c: SourceContext) => {
       );
     }
 
+    const job = await createAndDispatchIngestionJob({
+      organizationId,
+      agentId,
+      sourceId,
+    });
+
     return c.json({
       success: true,
-      message: "Source processing completed successfully",
-      data: result.source,
+      message: "Source processing has been restarted.",
+      data: {
+        source: result.source,
+        ingestionJob: {
+          id: job.id,
+          status: job.status,
+          progress: job.progress,
+        },
+      },
     });
   } catch (error) {
     console.error("Retry source processing error:", error);

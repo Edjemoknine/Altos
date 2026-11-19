@@ -93,7 +93,7 @@ type SourceScope = {
   sourceId: string;
 };
 
-async function markSourceCompleted(
+async function markSourceProcessing(
   sourceId: string,
   scope: SourceScope,
   metadata: Record<string, unknown>,
@@ -103,7 +103,7 @@ async function markSourceCompleted(
   const [updatedSource] = await db
     .update(sources)
     .set({
-      status: "completed",
+      status: "processing",
       metadata: {
         ...metadata,
         uploadedSize,
@@ -145,10 +145,7 @@ async function markSourceCompleted(
   return updatedSource;
 }
 
-async function removeDuplicateUpload(
-  storageKey: string,
-  scope: SourceScope,
-) {
+async function removeDuplicateUpload(storageKey: string, scope: SourceScope) {
   await deleteUploadedObject(storageKey);
   await db
     .delete(sources)
@@ -221,11 +218,17 @@ export async function completeFileUpload(scope: SourceScope) {
     return { success: false as const, reason: "not_found" as const };
   }
 
-  if (source.status === "completed") {
+  if (source.status === "processing" || source.status === "completed") {
     const [document] = await db
       .select({ id: documents.id })
       .from(documents)
-      .where(eq(documents.sourceId, source.id))
+      .where(
+        and(
+          eq(documents.sourceId, source.id),
+          eq(documents.organizationId, scope.organizationId),
+          eq(documents.agentId, scope.agentId),
+        ),
+      )
       .limit(1);
 
     if (document) {
@@ -343,7 +346,7 @@ export async function completeFileUpload(scope: SourceScope) {
     .limit(1);
 
   if (sameSourceDocument) {
-    const updatedSource = await markSourceCompleted(
+    const updatedSource = await markSourceProcessing(
       source.id,
       scope,
       metadata,
@@ -408,7 +411,7 @@ export async function completeFileUpload(scope: SourceScope) {
       .limit(1);
 
     if (sameSourceDocument) {
-      const updatedSource = await markSourceCompleted(
+      const updatedSource = await markSourceProcessing(
         source.id,
         scope,
         metadata,
@@ -445,7 +448,7 @@ export async function completeFileUpload(scope: SourceScope) {
     }
   }
 
-  const updatedSource = await markSourceCompleted(
+  const updatedSource = await markSourceProcessing(
     source.id,
     scope,
     metadata,

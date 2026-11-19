@@ -29,6 +29,7 @@ export async function updateIngestionStatus(
   sourceId: string,
   status: "processing" | "completed" | "failed",
   errorMessage?: string,
+  progress?: number,
 ) {
   const now = new Date();
 
@@ -36,13 +37,16 @@ export async function updateIngestionStatus(
     .update(ingestionJobs)
     .set({
       status,
+      ...(progress !== undefined ? { progress } : {}),
       ...(status === "processing"
-        ? { startedAt: now, errorMessage: null, completedAt: null }
+        ? {
+            startedAt: now,
+            errorMessage: null,
+            completedAt: null,
+          }
         : {}),
-      ...(status === "completed" || status === "failed"
-        ? { completedAt: now }
-        : {}),
-      ...(status === "failed" ? { errorMessage } : {}),
+      ...(status === "completed" ? { progress: 100, completedAt: now } : {}),
+      ...(status === "failed" ? { completedAt: now, errorMessage } : {}),
     })
     .where(eq(ingestionJobs.id, jobId));
 

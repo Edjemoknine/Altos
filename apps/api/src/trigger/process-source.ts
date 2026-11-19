@@ -1,9 +1,14 @@
 import { task } from "@trigger.dev/sdk";
+import { and, eq } from "drizzle-orm";
+
+import { db } from "../db/index.ts";
+import { documents } from "../db/schema.ts";
 
 import {
   getIngestionJob,
   updateIngestionStatus,
 } from "../services/ingestion/ingestion-job.service.ts";
+import { ingestDocument } from "../services/ingestion/docs-ingestion.service.ts";
 
 type ProcessSourcePayload = {
   jobId: string;
@@ -29,10 +34,7 @@ export const processSource = task({
 
     const { job, source } = result;
 
-    // A completed job should never be processed again.
     if (job.status === "completed") {
-      console.log(`Job ${jobId} is already completed`);
-
       return {
         success: true,
         skipped: true,
@@ -43,27 +45,44 @@ export const processSource = task({
     try {
       await updateIngestionStatus(job.id, source.id, "processing");
 
-      console.log("Processing source:", {
-        sourceId: source.id,
-        sourceType: source.type,
+      const [document] = await db
+        .select({ id: documents.id })
+        .from(documents)
+        .where(
+          and(
+            eq(documents.sourceId, source.id),
+            eq(documents.organizationId, job.organizationId),
+            eq(documents.agentId, job.agentId),
+          ),
+        )
+        .limit(1);
+
+      if (!document) {
+        throw new Error(`No extracted document found for source ${source.id}`);
+      }
+
+      const result = await ingestDocument({
+        documentId: document.id,
         organizationId: source.organizationId,
         agentId: source.agentId,
+        sourceId: source.id,
       });
 
-      // Source processing will be implemented next:
-      // website -> website loader
-      // file    -> file loader
-      // text    -> existing document content
+      await updateIngestionStatus(job.id, source.id, "completed");
+
+      console.log("Document ingestion completed:", result);
 
       return {
         success: true,
         jobId,
         sourceId: source.id,
-        status: "processing",
+        ...result,
       };
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Unknown ingestion error";
+
+      console.error("Ingestion failed:", message);
 
       try {
         await updateIngestionStatus(job.id, source.id, "failed", message);
