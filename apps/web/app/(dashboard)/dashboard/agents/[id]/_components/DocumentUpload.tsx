@@ -3,9 +3,12 @@
 import { useState, type ChangeEvent } from "react";
 import { Check, FileText, LoaderCircle, Upload } from "lucide-react";
 import { Input } from "@repo/ui/components/input";
-import { Panel, PrimaryButton } from "../../../../_components/dashboard-ui";
+import { Panel } from "../../../../_components/dashboard-ui";
 import { documentFileSchema } from "@/schemas/agents";
-import { useUploadAgentDocument } from "@/services/source.service";
+import {
+  useAgentSources,
+  useUploadAgentDocument,
+} from "@/services/source.service";
 import type { DocumentUploadProps, UploadStage } from "@/types/agents/configs";
 
 const uploadStageLabels: Record<Exclude<UploadStage, "idle">, string> = {
@@ -13,7 +16,7 @@ const uploadStageLabels: Record<Exclude<UploadStage, "idle">, string> = {
   extracting: "Extracting text from the document…",
   processing: "Saving the document and refreshing sources…",
   ready: "Ready · document uploaded and saved.",
-  failed: "Unable to upload the document.",
+  failed: "Unable to upload or process the document.",
 };
 
 export function DocumentUpload({
@@ -22,8 +25,10 @@ export function DocumentUpload({
   organizationId,
 }: DocumentUploadProps) {
   const [fileName, setFileName] = useState("");
+  const [uploadedSourceId, setUploadedSourceId] = useState<string | null>(null);
   const [uploadStage, setUploadStage] = useState<UploadStage>("idle");
   const [uploadError, setUploadError] = useState("");
+  const sourcesQuery = useAgentSources(organizationId, agentId);
   const uploadMutation = useUploadAgentDocument(
     organizationId,
     agentId,
@@ -36,6 +41,7 @@ export function DocumentUpload({
     if (!file) return;
 
     setFileName(file.name);
+    setUploadedSourceId(null);
     setUploadError("");
 
     const validation = documentFileSchema.safeParse(file);
@@ -53,6 +59,7 @@ export function DocumentUpload({
     try {
       const source = await uploadMutation.mutateAsync(file);
 
+      setUploadedSourceId(source.id);
       setUploadStage(source.status === "completed" ? "ready" : "processing");
     } catch (error) {
       setUploadStage("failed");
@@ -64,13 +71,23 @@ export function DocumentUpload({
     }
   }
 
+  const uploadedSource = sourcesQuery.data?.find(
+    (source) => source.id === uploadedSourceId,
+  );
+  const displayedStage =
+    uploadedSource?.status === "completed"
+      ? "ready"
+      : uploadedSource?.status === "failed"
+        ? "failed"
+        : uploadStage;
   const isUploading =
-    uploadMutation.isPending ||
-    (uploadStage !== "idle" &&
-      uploadStage !== "ready" &&
-      uploadStage !== "failed");
+    displayedStage !== "idle" &&
+    displayedStage !== "ready" &&
+    displayedStage !== "failed";
   const uploadMessage =
-    uploadStage === "idle" ? "" : uploadError || uploadStageLabels[uploadStage];
+    displayedStage === "idle"
+      ? ""
+      : uploadError || uploadStageLabels[displayedStage];
 
   return (
     <Panel className="overflow-hidden">
@@ -110,11 +127,11 @@ export function DocumentUpload({
           </span>
         </label>
 
-        {fileName && uploadStage !== "idle" && (
+        {fileName && displayedStage !== "idle" && (
           <div
             aria-live="polite"
             className={`mt-3 flex items-center gap-2 rounded-xl border px-3 py-2.5 ${
-              uploadStage === "failed"
+              displayedStage === "failed"
                 ? "border-[#f0d7d1] bg-[#fff7f5]"
                 : "border-[#edf0e9]"
             }`}
@@ -125,7 +142,7 @@ export function DocumentUpload({
                 aria-hidden="true"
                 className="size-4 shrink-0 animate-spin text-[#7c9f57]"
               />
-            ) : uploadStage === "ready" ? (
+            ) : displayedStage === "ready" ? (
               <Check
                 aria-hidden="true"
                 className="size-4 shrink-0 text-[#78a050]"
@@ -142,32 +159,20 @@ export function DocumentUpload({
           </div>
         )}
 
-        {uploadStage !== "idle" && (
+        {displayedStage !== "idle" && (
           <p
             aria-live="polite"
             className={`mt-2 text-[11px] ${
-              uploadStage === "failed"
+              displayedStage === "failed"
                 ? "text-[#b75d47]"
-                : uploadStage === "ready"
+                : displayedStage === "ready"
                   ? "text-[#63804b]"
                   : "text-[#718071]"
             }`}
-            role={uploadStage === "failed" ? "alert" : undefined}
+            role={displayedStage === "failed" ? "alert" : undefined}
           >
             {uploadMessage}
           </p>
-        )}
-
-        {isUploading && (
-          <div className="mt-3">
-            <PrimaryButton disabled type="button">
-              <LoaderCircle
-                aria-hidden="true"
-                className="size-3.5 animate-spin"
-              />
-              {uploadMessage}
-            </PrimaryButton>
-          </div>
         )}
       </div>
     </Panel>

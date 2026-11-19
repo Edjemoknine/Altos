@@ -1,4 +1,4 @@
-import { task } from "@trigger.dev/sdk";
+import { task, tasks } from "@trigger.dev/sdk";
 import { and, eq } from "drizzle-orm";
 
 import { db } from "../db/index.ts";
@@ -23,9 +23,27 @@ export const processSource = task({
 
   maxDuration: 3600,
 
-  run: async ({ jobId }: ProcessSourcePayload) => {
-    console.log(`Starting ingestion job: ${jobId}`);
+  run: async ({ jobId }: ProcessSourcePayload, { ctx }) => {
+    console.log(`Starting ingestion job: ${jobId}`, {
+      attempt: ctx.attempt.number,
+    });
 
+    tasks.onCancel(async () => {
+      console.warn(`Ingestion job cancelled: ${jobId}`);
+
+      const result = await getIngestionJob(jobId);
+
+      if (result && result.job.status !== "completed") {
+        await updateIngestionStatus(
+          result.job.id,
+          result.source.id,
+          "failed",
+          "Ingestion task was cancelled",
+        );
+      }
+    });
+
+    console.log("Loading ingestion job");
     const result = await getIngestionJob(jobId);
 
     if (!result) {
@@ -33,6 +51,7 @@ export const processSource = task({
     }
 
     const { job, source } = result;
+    console.log("Loaded ingestion job", { status: job.status });
 
     if (job.status === "completed") {
       return {
@@ -43,8 +62,10 @@ export const processSource = task({
     }
 
     try {
+      console.log("Marking ingestion job as processing");
       await updateIngestionStatus(job.id, source.id, "processing");
 
+      console.log("Loading extracted document");
       const [document] = await db
         .select({ id: documents.id })
         .from(documents)
@@ -61,6 +82,7 @@ export const processSource = task({
         throw new Error(`No extracted document found for source ${source.id}`);
       }
 
+      console.log("Loaded extracted document", { documentId: document.id });
       const result = await ingestDocument({
         documentId: document.id,
         organizationId: source.organizationId,
@@ -68,6 +90,7 @@ export const processSource = task({
         sourceId: source.id,
       });
 
+      console.log("Marking ingestion job as completed");
       await updateIngestionStatus(job.id, source.id, "completed");
 
       console.log("Document ingestion completed:", result);

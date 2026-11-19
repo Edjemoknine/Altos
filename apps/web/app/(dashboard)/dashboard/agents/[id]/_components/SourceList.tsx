@@ -22,8 +22,9 @@ export function SourceList({
   const sourcesQuery = useAgentSources(organizationId, agentId);
   const deleteSourceMutation = useDeleteAgentSource(organizationId, agentId);
   const retrySourceMutation = useRetryAgentSource(organizationId, agentId);
-  const [sourceToDelete, setSourceToDelete] =
-    useState<SourceToDelete | null>(null);
+  const [sourceToDelete, setSourceToDelete] = useState<SourceToDelete | null>(
+    null,
+  );
 
   function requestDelete(source: AgentSource) {
     deleteSourceMutation.reset();

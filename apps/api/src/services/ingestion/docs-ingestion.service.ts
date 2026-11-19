@@ -21,6 +21,7 @@ export async function ingestDocument({
   sourceId,
 }: IngestDocumentInput) {
   // 1. Retrieve the extracted document.
+  console.log("Loading document content", { documentId });
   const [document] = await db
     .select()
     .from(documents)
@@ -37,8 +38,15 @@ export async function ingestDocument({
   if (!document) {
     throw new Error("Extracted document not found");
   }
+  console.log("Loaded document content", {
+    characterCount: document.content.length,
+  });
 
   // 2. Split document into chunks.
+  const chunkingStartedAt = Date.now();
+  console.log("Splitting extracted document", {
+    characterCount: document.content.length,
+  });
   const chunks = await splitDocument(document.content, {
     organizationId,
     agentId,
@@ -51,10 +59,19 @@ export async function ingestDocument({
     throw new Error("Document produced no chunks");
   }
 
-  console.log(`Generated ${chunks.length} chunks`);
+  console.log("Generated document chunks", {
+    chunkCount: chunks.length,
+    elapsedMs: Date.now() - chunkingStartedAt,
+  });
 
   // 3. Generate embeddings.
+  const embeddingStartedAt = Date.now();
+  console.log("Starting document embeddings", { chunkCount: chunks.length });
   const vectors = await embedChunks(chunks.map((chunk) => chunk.pageContent));
+  console.log("Generated document embeddings", {
+    embeddingCount: vectors.length,
+    elapsedMs: Date.now() - embeddingStartedAt,
+  });
 
   if (vectors.length !== chunks.length) {
     throw new Error("Chunk and embedding counts do not match");

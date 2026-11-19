@@ -24,6 +24,10 @@ type UploadUrlResponse = {
   expiresIn: number;
 };
 
+type CompleteUploadResponse = {
+  source: AgentSource;
+};
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 const api = axios.create({
   baseURL: API_URL,
@@ -104,6 +108,13 @@ export function useAgentSources(
       return listAgentSources(organizationId, agentId);
     },
     enabled: Boolean(organizationId && agentId),
+    refetchInterval: (query) =>
+      query.state.data?.some(
+        (source) =>
+          source.status === "pending" || source.status === "processing",
+      )
+        ? 2_000
+        : false,
   });
 }
 
@@ -144,19 +155,19 @@ export async function uploadAgentDocument(
     });
 
     onStage?.("extracting");
-    const completeResponse = await api.post<ApiResponse<AgentSource>>(
+    const completeResponse = await api.post<ApiResponse<CompleteUploadResponse>>(
       `${sourcePath}/${encodeURIComponent(upload.source.id)}/complete`,
     );
     const result = completeResponse.data;
 
-    if (!result.success || !result.data) {
+    if (!result.success || !result.data?.source) {
       throw new Error(
         result.message ?? "Unable to finish the document upload.",
       );
     }
 
     onStage?.("processing");
-    return result.data;
+    return result.data.source;
   } catch (error) {
     throw new Error(
       getErrorMessage(
