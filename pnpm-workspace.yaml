@@ -2,6 +2,7 @@ packages:
   - "apps/*"
   - "packages/*"
 allowBuilds:
+  '@depot/cli': set this to true or false
   esbuild: true
 catalog:
   react: ^19
@@ -9,6 +10,12 @@ catalog:
   tailwindcss: ^4.3.3
   "@tailwindcss/postcss": ^4
   typescript: ^5.9.3
+minimumReleaseAgeExclude:
+  - "@trigger.dev/core@4.8.8"
+  - "@trigger.dev/sdk@4.8.8"
+  - "@trigger.dev/build@4.8.8"
+  - "@trigger.dev/schema-to-json@4.8.8"
+  - trigger.dev@4.8.8
 permissions:
   '@trigger.dev/sdk':
     skills: [trigger-authoring-chat-agent, trigger-authoring-tasks, trigger-chat-agent-advanced, trigger-cost-savings, trigger-realtime-and-frontend]

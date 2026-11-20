@@ -2,7 +2,10 @@ import { and, desc, eq } from "drizzle-orm";
 
 import { db } from "../../db/index.ts";
 import { ingestionJobs } from "../../db/schema.ts";
-import { triggerSourceIngestion } from "./trigger.service.ts";
+import {
+  triggerSourceIngestion,
+  triggerWebsiteCrawl,
+} from "./trigger.service.ts";
 
 import type { IngestionJobType } from "../../db/schema.ts";
 
@@ -34,11 +37,7 @@ export async function createAndDispatchIngestionJob({
     .limit(1);
 
   // Reuse an existing job instead of creating duplicate work.
-  if (latestJob?.status === "completed") {
-    return latestJob;
-  }
-
-  if (latestJob?.status === "processing") {
+  if (latestJob?.status === "completed" || latestJob?.status === "processing") {
     return latestJob;
   }
 
@@ -52,12 +51,21 @@ export async function createAndDispatchIngestionJob({
           jobType,
         });
 
-  const triggerRunId = await triggerSourceIngestion(job.id);
+  // Dispatch the correct task for the ingestion type.
+  const triggerRunId =
+    jobType === "website_crawl"
+      ? await triggerWebsiteCrawl(job.id)
+      : await triggerSourceIngestion(job.id);
 
   await db
     .update(ingestionJobs)
     .set({ triggerRunId })
-    .where(eq(ingestionJobs.id, job.id));
+    .where(
+      and(
+        eq(ingestionJobs.id, job.id),
+        eq(ingestionJobs.organizationId, organizationId),
+      ),
+    );
 
   return {
     ...job,
@@ -69,6 +77,7 @@ async function createIngestionJob({
   organizationId,
   agentId,
   sourceId,
+  jobType,
 }: CreateIngestionJobOptions) {
   const [job] = await db
     .insert(ingestionJobs)
@@ -76,7 +85,7 @@ async function createIngestionJob({
       organizationId,
       agentId,
       sourceId,
-      jobType: "file_processing",
+      jobType,
       status: "pending",
       progress: 0,
     })
