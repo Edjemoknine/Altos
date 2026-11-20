@@ -4,16 +4,20 @@ import { db } from "../../db/index.ts";
 import { ingestionJobs } from "../../db/schema.ts";
 import { triggerSourceIngestion } from "./trigger.service.ts";
 
+import type { IngestionJobType } from "../../db/schema.ts";
+
 type CreateIngestionJobOptions = {
   organizationId: string;
   agentId: string;
   sourceId: string;
+  jobType: IngestionJobType;
 };
 
 export async function createAndDispatchIngestionJob({
   organizationId,
   agentId,
   sourceId,
+  jobType,
 }: CreateIngestionJobOptions) {
   const [latestJob] = await db
     .select()
@@ -23,7 +27,7 @@ export async function createAndDispatchIngestionJob({
         eq(ingestionJobs.organizationId, organizationId),
         eq(ingestionJobs.agentId, agentId),
         eq(ingestionJobs.sourceId, sourceId),
-        eq(ingestionJobs.jobType, "file_processing"),
+        eq(ingestionJobs.jobType, jobType),
       ),
     )
     .orderBy(desc(ingestionJobs.createdAt))
@@ -45,6 +49,7 @@ export async function createAndDispatchIngestionJob({
           organizationId,
           agentId,
           sourceId,
+          jobType,
         });
 
   const triggerRunId = await triggerSourceIngestion(job.id);

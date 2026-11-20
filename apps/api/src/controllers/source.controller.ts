@@ -357,6 +357,7 @@ export const confirmFileUpload = async (c: SourceContext) => {
       organizationId,
       agentId,
       sourceId,
+      jobType: "file_processing",
     });
 
     return c.json({
@@ -456,6 +457,7 @@ export const retrySourceProcessing = async (c: SourceContext) => {
       organizationId,
       agentId,
       sourceId,
+      jobType: "file_processing",
     });
 
     return c.json({

@@ -1,13 +1,14 @@
 import { task, tasks } from "@trigger.dev/sdk";
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 
 import { db } from "../db/index.ts";
-import { documents } from "../db/schema.ts";
+import { documents, ingestionJobs } from "../db/schema.ts";
 
 import {
   getIngestionJob,
   updateIngestionStatus,
 } from "../services/ingestion/ingestion-job.service.ts";
+
 import { ingestDocument } from "../services/ingestion/docs-ingestion.service.ts";
 
 type ProcessSourcePayload = {
@@ -16,11 +17,7 @@ type ProcessSourcePayload = {
 
 export const processSource = task({
   id: "process-source",
-
-  retry: {
-    maxAttempts: 3,
-  },
-
+  retry: { maxAttempts: 3 },
   maxDuration: 3600,
 
   run: async ({ jobId }: ProcessSourcePayload, { ctx }) => {
@@ -43,7 +40,6 @@ export const processSource = task({
       }
     });
 
-    console.log("Loading ingestion job");
     const result = await getIngestionJob(jobId);
 
     if (!result) {
@@ -51,22 +47,22 @@ export const processSource = task({
     }
 
     const { job, source } = result;
-    console.log("Loaded ingestion job", { status: job.status });
 
     if (job.status === "completed") {
-      return {
-        success: true,
-        skipped: true,
-        jobId,
-      };
+      return { success: true, skipped: true, jobId };
     }
 
     try {
-      console.log("Marking ingestion job as processing");
-      await updateIngestionStatus(job.id, source.id, "processing");
+      await updateIngestionStatus(
+        job.id,
+        source.id,
+        "processing",
+        undefined,
+        0,
+      );
 
-      console.log("Loading extracted document");
-      const [document] = await db
+      // Retrieve every document belonging to this source.
+      const sourceDocuments = await db
         .select({ id: documents.id })
         .from(documents)
         .where(
@@ -76,36 +72,71 @@ export const processSource = task({
             eq(documents.agentId, job.agentId),
           ),
         )
-        .limit(1);
+        .orderBy(asc(documents.createdAt));
 
-      if (!document) {
-        throw new Error(`No extracted document found for source ${source.id}`);
+      if (sourceDocuments.length === 0) {
+        throw new Error(`No extracted documents found for source ${source.id}`);
       }
 
-      console.log("Loaded extracted document", { documentId: document.id });
-      const result = await ingestDocument({
-        documentId: document.id,
-        organizationId: source.organizationId,
-        agentId: source.agentId,
+      console.log("Found documents for ingestion", {
         sourceId: source.id,
+        totalDocuments: sourceDocuments.length,
       });
 
-      console.log("Marking ingestion job as completed");
-      await updateIngestionStatus(job.id, source.id, "completed");
+      const results = [];
 
-      console.log("Document ingestion completed:", result);
+      // Process documents sequentially.
+      for (let i = 0; i < sourceDocuments.length; i++) {
+        const document = sourceDocuments[i]!;
+
+        console.log("Processing document", {
+          documentId: document.id,
+          documentNumber: i + 1,
+          totalDocuments: sourceDocuments.length,
+        });
+
+        const ingestionResult = await ingestDocument({
+          documentId: document.id,
+          organizationId: source.organizationId,
+          agentId: source.agentId,
+          sourceId: source.id,
+        });
+
+        results.push(ingestionResult);
+
+        const progress = Math.round(((i + 1) / sourceDocuments.length) * 100);
+
+        // Update progress without resetting startedAt.
+        await db
+          .update(ingestionJobs)
+          .set({ progress })
+          .where(eq(ingestionJobs.id, job.id));
+
+        console.log("Document ingestion completed", {
+          documentId: document.id,
+          progress,
+        });
+      }
+
+      await updateIngestionStatus(job.id, source.id, "completed");
 
       return {
         success: true,
         jobId,
         sourceId: source.id,
-        ...result,
+        totalDocuments: sourceDocuments.length,
+        totalChunks: results.reduce(
+          (total, item) => total + item.totalChunks,
+          0,
+        ),
+        totalEmbeddings: results.reduce(
+          (total, item) => total + item.totalEmbeddings,
+          0,
+        ),
       };
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Unknown ingestion error";
-
-      console.error("Ingestion failed:", message);
 
       try {
         await updateIngestionStatus(job.id, source.id, "failed", message);
