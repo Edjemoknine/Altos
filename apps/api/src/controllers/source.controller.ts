@@ -2,7 +2,7 @@ import { and, desc, eq } from "drizzle-orm";
 import type { Context } from "hono";
 
 import { db } from "../db/index.ts";
-import { sources } from "../db/schema.ts";
+import { ingestionJobs, sources } from "../db/schema.ts";
 import { DuplicateDocumentError, getAgent } from "../helpers/source.service.ts";
 import type { OrganizationEnv } from "../middlewares/organization.middleware.ts";
 import {
@@ -119,17 +119,38 @@ export const createSource = async (c: SourceContext) => {
   }
 
   try {
+    // 1. Create the source.
     const source = await createSourceService({
       organizationId,
       agentId,
       input: validation.data,
     });
 
+    // 2. Determine the ingestion pipeline.
+    const jobType =
+      source.type === "website" ? "website_crawl" : "text_processing";
+
+    // 3. Dispatch the appropriate Trigger.dev task.
+    const job = await createAndDispatchIngestionJob({
+      organizationId,
+      agentId,
+      sourceId: source.id,
+      jobType,
+    });
+
+    // 4. Return immediately. Processing happens in the background.
     return c.json(
       {
         success: true,
-        message: "Source created successfully",
-        data: source,
+        message: "Source created and processing queued successfully",
+        data: {
+          source,
+          ingestionJob: {
+            id: job.id,
+            status: job.status,
+            progress: job.progress,
+          },
+        },
       },
       201,
     );
@@ -480,4 +501,67 @@ export const retrySourceProcessing = async (c: SourceContext) => {
       500,
     );
   }
+};
+
+// GET /organizations/:organizationId/agents/:agentId/sources/:sourceId/ingestion
+export const getSourceIngestionStatus = async (c: SourceContext) => {
+  const { organizationId, agentId, sourceId } = c.req.param();
+
+  if (!organizationId || !agentId || !sourceId) {
+    return c.json({ success: false, message: "Missing route parameters" }, 400);
+  }
+
+  // Verify that the source belongs to this organization and agent.
+  const [source] = await db
+    .select({
+      id: sources.id,
+      status: sources.status,
+    })
+    .from(sources)
+    .where(
+      and(
+        eq(sources.id, sourceId),
+        eq(sources.organizationId, organizationId),
+        eq(sources.agentId, agentId),
+      ),
+    )
+    .limit(1);
+
+  if (!source) {
+    return c.json({ success: false, message: "Source not found" }, 404);
+  }
+
+  // Retrieve the latest ingestion job for this source.
+  const [job] = await db
+    .select({
+      id: ingestionJobs.id,
+      jobType: ingestionJobs.jobType,
+      status: ingestionJobs.status,
+      progress: ingestionJobs.progress,
+      errorMessage: ingestionJobs.errorMessage,
+      startedAt: ingestionJobs.startedAt,
+      completedAt: ingestionJobs.completedAt,
+      createdAt: ingestionJobs.createdAt,
+    })
+    .from(ingestionJobs)
+    .where(
+      and(
+        eq(ingestionJobs.sourceId, sourceId),
+        eq(ingestionJobs.organizationId, organizationId),
+        eq(ingestionJobs.agentId, agentId),
+      ),
+    )
+    .orderBy(desc(ingestionJobs.createdAt))
+    .limit(1);
+
+  return c.json({
+    success: true,
+    data: {
+      source: {
+        id: source.id,
+        status: source.status,
+      },
+      ingestionJob: job ?? null,
+    },
+  });
 };

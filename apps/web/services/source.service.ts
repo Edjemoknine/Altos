@@ -37,10 +37,23 @@ const api = axios.create({
 
 export const sourceQueryKeys = {
   all: ["sources"] as const,
+
   list: (organizationId: string | undefined, agentId: string | undefined) =>
     [...sourceQueryKeys.all, organizationId, agentId] as const,
-};
 
+  ingestion: (
+    organizationId: string | undefined,
+    agentId: string | undefined,
+    sourceId: string | undefined,
+  ) =>
+    [
+      ...sourceQueryKeys.all,
+      "ingestion",
+      organizationId,
+      agentId,
+      sourceId,
+    ] as const,
+};
 function getErrorMessage(error: unknown, fallback: string) {
   if (axios.isAxiosError<ApiResponse<unknown>>(error)) {
     return error.response?.data.message ?? error.message ?? fallback;
@@ -155,9 +168,9 @@ export async function uploadAgentDocument(
     });
 
     onStage?.("extracting");
-    const completeResponse = await api.post<ApiResponse<CompleteUploadResponse>>(
-      `${sourcePath}/${encodeURIComponent(upload.source.id)}/complete`,
-    );
+    const completeResponse = await api.post<
+      ApiResponse<CompleteUploadResponse>
+    >(`${sourcePath}/${encodeURIComponent(upload.source.id)}/complete`);
     const result = completeResponse.data;
 
     if (!result.success || !result.data?.source) {
@@ -284,5 +297,143 @@ export function useRetryAgentSource(
       queryClient.invalidateQueries({
         queryKey: sourceQueryKeys.list(organizationId, agentId),
       }),
+  });
+}
+
+export type IngestionJobStatus =
+  "pending" | "processing" | "completed" | "failed";
+
+export type IngestionJobType =
+  "website_crawl" | "file_processing" | "text_processing";
+
+export type SourceIngestionStatus = {
+  source: {
+    id: string;
+    status: AgentSource["status"];
+  };
+  ingestionJob: {
+    id: string;
+    jobType: IngestionJobType;
+    status: IngestionJobStatus;
+    progress: number;
+    errorMessage: string | null;
+    startedAt: string | null;
+    completedAt: string | null;
+    createdAt: string;
+  } | null;
+};
+
+type CreateWebsiteSourceResponse = {
+  source: AgentSource;
+  ingestionJob: {
+    id: string;
+    status: IngestionJobStatus;
+    progress: number;
+  };
+};
+
+export async function createWebsiteSource(
+  organizationId: string,
+  agentId: string,
+  input: { name: string; url: string },
+): Promise<CreateWebsiteSourceResponse> {
+  requireApiUrl();
+
+  try {
+    const response = await api.post<ApiResponse<CreateWebsiteSourceResponse>>(
+      getSourcePath(organizationId, agentId),
+      {
+        ...input,
+        type: "website",
+      },
+    );
+
+    const result = response.data;
+
+    if (!result.success || !result.data) {
+      throw new Error(result.message ?? "Unable to start website crawling.");
+    }
+
+    return result.data;
+  } catch (error) {
+    throw new Error(
+      getErrorMessage(error, "Unable to start website crawling."),
+    );
+  }
+}
+export async function getSourceIngestionStatus(
+  organizationId: string,
+  agentId: string,
+  sourceId: string,
+): Promise<SourceIngestionStatus> {
+  requireApiUrl();
+
+  try {
+    const response = await api.get<ApiResponse<SourceIngestionStatus>>(
+      `${getSourcePath(organizationId, agentId)}/${encodeURIComponent(sourceId)}/ingestion`,
+    );
+
+    const result = response.data;
+
+    if (!result.success || !result.data) {
+      throw new Error(result.message ?? "Unable to load ingestion status.");
+    }
+
+    return result.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Unable to load ingestion status."));
+  }
+}
+export function useCreateWebsiteSource(
+  organizationId: string | undefined,
+  agentId: string | undefined,
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: { name: string; url: string }) => {
+      if (!organizationId || !agentId) {
+        throw new Error(
+          "Select an organization and agent before adding a website.",
+        );
+      }
+
+      return createWebsiteSource(organizationId, agentId, input);
+    },
+
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: sourceQueryKeys.list(organizationId, agentId),
+      }),
+  });
+}
+
+export function useSourceIngestionStatus(
+  organizationId: string | undefined,
+  agentId: string | undefined,
+  sourceId: string | undefined,
+) {
+  return useQuery({
+    queryKey: sourceQueryKeys.ingestion(organizationId, agentId, sourceId),
+
+    queryFn: () => {
+      if (!organizationId || !agentId || !sourceId) {
+        throw new Error("Organization, agent, and source are required.");
+      }
+
+      return getSourceIngestionStatus(organizationId, agentId, sourceId);
+    },
+
+    enabled: Boolean(organizationId && agentId && sourceId),
+
+    refetchInterval: (query) => {
+      const data = query.state.data;
+
+      if (!data) return 2000;
+
+      const status = data.ingestionJob?.status ?? data.source.status;
+
+      return status === "pending" || status === "processing" ? 2000 : false;
+    },
   });
 }

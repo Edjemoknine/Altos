@@ -9,6 +9,7 @@ import {
   listSources,
   refreshFileUploadUrl,
   retrySourceProcessing,
+  getSourceIngestionStatus,
 } from "../controllers/source.controller.ts";
 
 import {
@@ -65,4 +66,9 @@ sourceRoutes.delete(
   deleteSource,
 );
 
+sourceRoutes.get(
+  "/:sourceId/ingestion",
+  requireOrganizationRole(["owner", "member"]),
+  getSourceIngestionStatus,
+);
 export default sourceRoutes;

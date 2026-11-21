@@ -157,7 +157,8 @@ export function SourceList({
               No sources yet
             </p>
             <p className="mt-1 text-xs text-[#879087]">
-              Uploaded documents will appear here with their processing status.
+              Add documents or websites to build this agent&apos;s knowledge
+              base.
             </p>
           </div>
         )}

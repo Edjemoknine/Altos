@@ -8,18 +8,26 @@ import { WebsiteCrawlForm } from "./WebsiteCrawlForm";
 
 export function KnowledgeBaseTab() {
   const { id: agentId } = useParams<{ id: string }>();
+
   const { data: activeOrganization, isPending: isOrganizationPending } =
     authClient.useActiveOrganization();
+
   const organizationId = activeOrganization?.id;
 
   return (
     <div className="grid max-w-5xl gap-5 lg:grid-cols-2">
-      <WebsiteCrawlForm />
+      <WebsiteCrawlForm
+        agentId={agentId}
+        isOrganizationPending={isOrganizationPending}
+        organizationId={organizationId}
+      />
+
       <DocumentUpload
         agentId={agentId}
         isOrganizationPending={isOrganizationPending}
         organizationId={organizationId}
       />
+
       <SourceList
         agentId={agentId}
         isOrganizationPending={isOrganizationPending}
