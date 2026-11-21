@@ -10,7 +10,11 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { organization } from "./organization.ts";
-
+export type AgentTone = "professional" | "friendly" | "casual" | "formal";
+export type AgentSettings = {
+  tone: AgentTone;
+  targetWebsiteUrl: string;
+};
 export const agents = pgTable(
   "agents",
   {
@@ -24,8 +28,11 @@ export const agents = pgTable(
     status: varchar("status").default("active").notNull(),
     publicId: uuid("public_id").defaultRandom().notNull().unique(),
     settings: jsonb("settings")
-      .$type<Record<string, unknown>>()
-      .default({})
+      .$type<AgentSettings>()
+      .default({
+        tone: "professional",
+        targetWebsiteUrl: "",
+      })
       .notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")

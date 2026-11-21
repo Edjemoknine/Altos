@@ -5,7 +5,9 @@ import authRoutes from "./routes/auth.routes.ts";
 import userRoutes from "./routes/user.routes.ts";
 import agentRoutes from "./routes/agent.routes.ts";
 import organizationRoutes from "./routes/organization.route.ts";
+import { chatRoutes } from "./routes/chat.routes.ts";
 
+// Keep this outside authenticated organization routes.
 const app = new Hono().basePath("/api");
 
 // CORS - apply to every route under /api
@@ -32,6 +34,7 @@ app.route("/auth", authRoutes);
 app.route("/users", userRoutes);
 app.route("/agents", agentRoutes);
 app.route("/organizations", organizationRoutes);
+app.route("/api/chat", chatRoutes);
 
 export type AppType = typeof app;
 

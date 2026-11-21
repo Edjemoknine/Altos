@@ -6,6 +6,8 @@ import { sources } from "./schemas/source.ts";
 import { documents } from "./schemas/document.ts";
 import { documentChunks } from "./schemas/document-chunk.ts";
 import { ingestionJobs } from "./schemas/ingestion-job.ts";
+import { conversations } from "./schemas/conversations.ts";
+import { messages } from "./schemas/messages.ts";
 
 export * from "./schemas/auth.ts";
 export * from "./schemas/agent.ts";
@@ -14,6 +16,8 @@ export * from "./schemas/source.ts";
 export * from "./schemas/document.ts";
 export * from "./schemas/document-chunk.ts";
 export * from "./schemas/ingestion-job.ts";
+export * from "./schemas/conversations.ts";
+export * from "./schemas/messages.ts";
 
 export const relations = defineRelations(
   {
@@ -28,6 +32,8 @@ export const relations = defineRelations(
     documents,
     documentChunks,
     ingestionJobs,
+    conversations,
+    messages,
   },
   (r) => ({
     user: {
@@ -80,6 +86,10 @@ export const relations = defineRelations(
         from: r.organization.id,
         to: r.ingestionJobs.organizationId,
       }),
+      conversations: r.many.conversations({
+        from: r.organization.id,
+        to: r.conversations.organizationId,
+      }),
     },
     member: {
       organization: r.one.organization({
@@ -118,6 +128,10 @@ export const relations = defineRelations(
       ingestionJobs: r.many.ingestionJobs({
         from: r.agents.id,
         to: r.ingestionJobs.agentId,
+      }),
+      conversations: r.many.conversations({
+        from: r.agents.id,
+        to: r.conversations.agentId,
       }),
     },
     sources: {
@@ -182,6 +196,26 @@ export const relations = defineRelations(
       source: r.one.sources({
         from: r.ingestionJobs.sourceId,
         to: r.sources.id,
+      }),
+    },
+    conversations: {
+      organization: r.one.organization({
+        from: r.conversations.organizationId,
+        to: r.organization.id,
+      }),
+      agent: r.one.agents({
+        from: r.conversations.agentId,
+        to: r.agents.id,
+      }),
+      messages: r.many.messages({
+        from: r.conversations.id,
+        to: r.messages.conversationId,
+      }),
+    },
+    messages: {
+      conversation: r.one.conversations({
+        from: r.messages.conversationId,
+        to: r.conversations.id,
       }),
     },
   }),

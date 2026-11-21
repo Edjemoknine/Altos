@@ -180,7 +180,7 @@ export const processSource = task({
       result.job.id,
       result.source.id,
       "failed",
-      error.message,
+      error instanceof Error ? error.message : String(error),
     );
   },
 });

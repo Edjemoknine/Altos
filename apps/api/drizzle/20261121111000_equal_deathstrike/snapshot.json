@@ -1,0 +1,173 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "91ca5b7d-cf1b-4afc-85f2-496fca78805f",
+  "prevIds": [
+    "ff8e57d2-9df6-411e-aa74-1eb054a76200"
+  ],
+  "footprints": [
+    {
+      "statementType": "rename_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "messages",
+        "messages_conversation_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.messages_conversation_id_idx",
+        "n|idx|public.messages_conversation_id_idx",
+        "n|rel|public.messages_conversation_id_idx",
+        "s|idx|public.messages_conversation_created_idx",
+        "n|idx|public.messages_conversation_created_idx",
+        "n|rel|public.messages_conversation_created_idx"
+      ],
+      "reads": [
+        "e|tbl|public.messages",
+        "n|sch|public",
+        "e|col|public.messages.conversation_id",
+        "e|col|public.messages.created_at"
+      ]
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "agents",
+        "settings"
+      ],
+      "writes": [
+        "s|colprop|public.agents.settings.default"
+      ],
+      "reads": [
+        "n|tbl|public.agents",
+        "n|sch|public",
+        "n|col|public.agents.settings"
+      ],
+      "sqlHash": "416f2835b06b2912"
+    },
+    {
+      "statementType": "recreate_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "messages",
+        "messages_conversation_created_idx"
+      ],
+      "writes": [
+        "s|idx|public.messages_conversation_created_idx",
+        "n|idx|public.messages_conversation_created_idx",
+        "e|idx|public.messages_conversation_created_idx",
+        "n|rel|public.messages_conversation_created_idx"
+      ],
+      "reads": [
+        "n|tbl|public.messages",
+        "n|sch|public",
+        "n|col|public.messages.conversation_id",
+        "n|col|public.messages.created_at"
+      ],
+      "sharedWrites": [],
+      "sqlHash": "acf8a89fa0b20d68"
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversations",
+        "conversations_agent_visitor_updated_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversations_agent_visitor_updated_idx",
+        "n|idx|public.conversations_agent_visitor_updated_idx",
+        "e|idx|public.conversations_agent_visitor_updated_idx",
+        "n|rel|public.conversations_agent_visitor_updated_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conversations",
+        "n|sch|public",
+        "n|col|public.conversations.agent_id",
+        "n|col|public.conversations.visitor_id",
+        "n|col|public.conversations.updated_at"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "rename",
+      "key": "indexes\u0000[\"public\",\"messages_conversation_id_idx\"]",
+      "set": {
+        "name": "messages_conversation_created_idx"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversations",
+        "name": "conversations_agent_visitor_updated_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "agent_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "visitor_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "updated_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"agents\",\"settings\"]",
+      "set": {
+        "default": "'{\"tone\":\"professional\",\"targetWebsiteUrl\":\"\"}'"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"messages_conversation_created_idx\"]",
+      "set": {
+        "columns": [
+          {
+            "value": "conversation_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "created_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ]
+      }
+    }
+  ]
+}

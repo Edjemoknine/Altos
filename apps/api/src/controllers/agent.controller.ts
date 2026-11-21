@@ -4,6 +4,32 @@ import { and, eq } from "drizzle-orm";
 import { db } from "../db/index.ts";
 import { agents } from "../db/schemas/agent.ts";
 import type { OrganizationEnv } from "../middlewares/organization.middleware.ts";
+import type { AgentSettings, AgentTone } from "../db/schema.ts";
+
+const AGENT_TONES: AgentTone[] = [
+  "professional",
+  "friendly",
+  "casual",
+  "formal",
+];
+
+function parseAgentSettings(settings: Record<string, unknown>): AgentSettings {
+  if (
+    typeof settings.tone !== "string" ||
+    !AGENT_TONES.includes(settings.tone as AgentTone)
+  ) {
+    throw new Error("Invalid agent tone");
+  }
+
+  if (typeof settings.targetWebsiteUrl !== "string") {
+    throw new Error("Invalid target website URL");
+  }
+
+  return {
+    tone: settings.tone as AgentTone,
+    targetWebsiteUrl: settings.targetWebsiteUrl,
+  };
+}
 const getAgentId = (c: AgentContext): string | null => {
   const agentId = c.req.param("agentId");
 
@@ -68,7 +94,13 @@ export const createAgent = async (c: AgentContext) => {
       name: name.trim(),
       description: description.trim(),
       instructions: instructions.trim(),
-      settings: settings ?? {},
+      settings: parseAgentSettings(
+        typeof body.settings === "object" &&
+          body.settings !== null &&
+          !Array.isArray(body.settings)
+          ? (body.settings as Record<string, unknown>)
+          : {},
+      ),
     })
     .returning();
 
@@ -193,7 +225,7 @@ export const updateAgent = async (c: AgentContext) => {
       );
     }
 
-    updates.settings = body.settings;
+    updates.settings = parseAgentSettings(body.settings);
   }
 
   if (Object.keys(updates).length === 0) {

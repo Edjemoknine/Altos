@@ -133,7 +133,9 @@ export const crawlWebsiteTask = task({
       payload.jobId,
       result.job.sourceId,
       "failed",
-      error?.message || "An unknown error occurred during website crawling.",
+      error instanceof Error
+        ? error.message
+        : "An unknown error occurred during website crawling.",
     );
   },
 });
