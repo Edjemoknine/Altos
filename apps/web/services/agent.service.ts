@@ -1,19 +1,13 @@
 import axios from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Agent, CreateAgentInput } from "@/types/agents";
+import { api, API_URL } from "./api";
 
 type ApiResponse<T> = {
   success: boolean;
   message?: string;
   data?: T;
 };
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-const api = axios.create({
-  baseURL: API_URL,
-  withCredentials: true,
-  headers: { "Content-Type": "application/json" },
-});
 
 export const agentQueryKeys = {
   all: ["agents"] as const,
@@ -101,7 +95,9 @@ export function useAgent(
     queryKey: agentQueryKeys.detail(organizationId, agentId),
     queryFn: () => {
       if (!organizationId || !agentId) {
-        throw new Error("Select an organization and agent to load its details.");
+        throw new Error(
+          "Select an organization and agent to load its details.",
+        );
       }
 
       return getAgent(organizationId, agentId);

@@ -34,7 +34,7 @@ app.route("/auth", authRoutes);
 app.route("/users", userRoutes);
 app.route("/agents", agentRoutes);
 app.route("/organizations", organizationRoutes);
-app.route("/api/chat", chatRoutes);
+app.route("/chat", chatRoutes);
 
 export type AppType = typeof app;
 

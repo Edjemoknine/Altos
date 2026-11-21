@@ -63,7 +63,9 @@ export function AgentTabs({ agent }: { agent: Agent }) {
         {activeTab === "knowledge" && <KnowledgeBaseTab />}
         {activeTab === "api-key" && <ApiKeyTab />}
         {activeTab === "embed" && <EmbedWidgetTab />}
-        {activeTab === "test" && <TestAgentTab agentName={agent.name} />}
+        {activeTab === "test" && (
+          <TestAgentTab agentName={agent.name} publicId={agent.publicId} />
+        )}
       </AgentApiKeyProvider>
     </>
   );

@@ -1,0 +1,135 @@
+// src/services/chat/chat.service.ts
+
+export type ChatSource = {
+  documentId: string;
+  chunkId: string;
+  sourceId: string;
+  title: string;
+  url: string | null;
+  snippet: string;
+};
+
+export type ChatStreamEvent =
+  | { type: "conversation"; conversationId: string }
+  | { type: "sources"; sources: ChatSource[] }
+  | { type: "token"; token: string }
+  | { type: "done"; messageId: string }
+  | { type: "error"; message: string };
+
+export type SendChatMessageInput = {
+  publicId: string;
+  visitorId: string;
+  conversationId?: string;
+  message: string;
+  signal?: AbortSignal;
+  onEvent: (event: ChatStreamEvent) => void;
+};
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+function parseSSEBlock(block: string): ChatStreamEvent | null {
+  let eventName = "";
+  const dataLines: string[] = [];
+
+  for (const line of block.split(/\r?\n/)) {
+    if (line.startsWith("event:")) {
+      eventName = line.slice(6).trim();
+    } else if (line.startsWith("data:")) {
+      dataLines.push(line.slice(5).trim());
+    }
+  }
+
+  if (!dataLines.length) return null;
+
+  const payload = JSON.parse(dataLines.join("\n")) as ChatStreamEvent;
+
+  // The server sends both an SSE event name and a JSON `type`.
+  return {
+    ...payload,
+    type: eventName || payload.type,
+  } as ChatStreamEvent;
+}
+
+export async function sendChatMessage({
+  publicId,
+  visitorId,
+  conversationId,
+  message,
+  signal,
+  onEvent,
+}: SendChatMessageInput): Promise<void> {
+  if (!API_URL) {
+    throw new Error("API URL is not configured");
+  }
+
+  const response = await fetch(
+    `${API_URL}/api/chat/${encodeURIComponent(publicId)}/messages`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "text/event-stream",
+      },
+      body: JSON.stringify({
+        visitorId,
+        conversationId: conversationId ?? null,
+        message,
+      }),
+      signal,
+    },
+  );
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => null);
+    throw new Error(errorBody?.message ?? "Unable to send your message");
+  }
+
+  if (!response.body) {
+    throw new Error("Your browser does not support response streaming");
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      const blocks = buffer.split(/\r?\n\r?\n/);
+      buffer = blocks.pop() ?? "";
+
+      for (const block of blocks) {
+        if (!block.trim()) continue;
+
+        const event = parseSSEBlock(block);
+        if (!event) continue;
+
+        if (event.type === "error") {
+          throw new Error(event.message);
+        }
+
+        onEvent(event);
+      }
+    }
+
+    // Process any final event left in the buffer.
+    buffer += decoder.decode();
+
+    if (buffer.trim()) {
+      const event = parseSSEBlock(buffer);
+
+      if (event?.type === "error") {
+        throw new Error(event.message);
+      }
+
+      if (event) onEvent(event);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
