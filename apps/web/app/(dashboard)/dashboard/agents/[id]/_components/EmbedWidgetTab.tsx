@@ -5,11 +5,24 @@ import { Copy, MessageSquareText } from "lucide-react";
 import { Panel, PrimaryButton } from "../../../../_components/dashboard-ui";
 import { useAgentApiKey } from "./AgentApiKeyContext";
 
-export function EmbedWidgetTab() {
+const WIDGET_URL = process.env.NEXT_PUBLIC_WIDGET_URL;
+
+type EmbedWidgetTabProps = {
+  publicId: string;
+};
+
+export function EmbedWidgetTab({ publicId }: EmbedWidgetTabProps) {
   const { createdKey } = useAgentApiKey();
   const [copyNotice, setCopyNotice] = useState("");
 
-  const widgetSnippet = `<script src="https://yourdomain.com/widget.js" data-api-key="${createdKey?.key ?? "YOUR_KEY"}"></script>`;
+  const widgetSnippet = createdKey
+    ? `<script
+  src="${WIDGET_URL}/loader.js"
+  data-agent-id="${publicId}"
+  data-api-key="${createdKey.key}"
+  defer
+></script>`
+    : "";
 
   async function copySnippet() {
     try {
@@ -44,32 +57,32 @@ export function EmbedWidgetTab() {
       <div className="space-y-4 p-5 sm:p-6">
         {!createdKey && (
           <div className="rounded-xl border border-[#efe5cf] bg-[#fcf8ed] px-4 py-3 text-xs leading-5 text-[#8f774a]">
-            Generate a widget API key first. The key is displayed only once
-            after creation. If you have lost it, create a new key.
+            Generate a widget API key first. The raw key is only shown once. If
+            you have lost it, create a new key.
           </div>
         )}
 
-        <div className="overflow-x-auto rounded-xl bg-[#16221a] p-4">
-          <code className="whitespace-nowrap font-mono text-xs leading-6 text-[#d4e8bd]">
-            {widgetSnippet}
-          </code>
-        </div>
+        {createdKey && (
+          <>
+            <div className="overflow-x-auto rounded-xl bg-[#16221a] p-4">
+              <pre className="whitespace-pre font-mono text-xs leading-6 text-[#d4e8bd]">
+                {widgetSnippet}
+              </pre>
+            </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <PrimaryButton
-            onClick={copySnippet}
-            type="button"
-            disabled={!createdKey}
-          >
-            <Copy className="size-3.5" /> Copy code snippet
-          </PrimaryButton>
+            <div className="flex flex-wrap items-center gap-3">
+              <PrimaryButton onClick={copySnippet} type="button">
+                <Copy className="size-3.5" /> Copy code snippet
+              </PrimaryButton>
 
-          {copyNotice && (
-            <p aria-live="polite" className="text-xs text-[#63804b]">
-              {copyNotice}
-            </p>
-          )}
-        </div>
+              {copyNotice && (
+                <p aria-live="polite" className="text-xs text-[#63804b]">
+                  {copyNotice}
+                </p>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </Panel>
   );

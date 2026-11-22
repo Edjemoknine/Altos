@@ -5,10 +5,24 @@ import { db } from "../db/index.ts";
 import { agentWidgetKeys, agents } from "../db/schema.ts";
 import { hashWidgetKey } from "../utils/widget-key.ts";
 
+function normalizeOrigin(value: string): string | null {
+  try {
+    const url = new URL(value);
+
+    if (url.protocol !== "https:" && url.protocol !== "http:") {
+      return null;
+    }
+
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
 export const widgetAuthMiddleware = createMiddleware(async (c, next) => {
   const publicId = c.req.param("publicId");
   const widgetKey = c.req.header("X-Widget-Key");
-  const origin = c.req.header("Origin");
+  const customerOrigin = c.req.header("X-Widget-Origin");
 
   if (!publicId || !widgetKey) {
     return c.json(
@@ -17,19 +31,20 @@ export const widgetAuthMiddleware = createMiddleware(async (c, next) => {
     );
   }
 
-  if (!origin) {
+  if (!customerOrigin) {
     return c.json(
-      { success: false, message: "Origin header is required" },
+      { success: false, message: "Customer website origin is required" },
       403,
     );
   }
 
-  let requestOrigin: string;
+  const requestOrigin = normalizeOrigin(customerOrigin);
 
-  try {
-    requestOrigin = new URL(origin).origin;
-  } catch {
-    return c.json({ success: false, message: "Invalid origin" }, 403);
+  if (!requestOrigin) {
+    return c.json(
+      { success: false, message: "Invalid customer website origin" },
+      403,
+    );
   }
 
   const keyHash = hashWidgetKey(widgetKey);
@@ -39,7 +54,7 @@ export const widgetAuthMiddleware = createMiddleware(async (c, next) => {
       keyId: agentWidgetKeys.id,
       agentId: agents.id,
       status: agents.status,
-      targetWebsiteUrl: agents.settings,
+      settings: agents.settings,
     })
     .from(agentWidgetKeys)
     .innerJoin(agents, eq(agentWidgetKeys.agentId, agents.id))
@@ -59,7 +74,7 @@ export const widgetAuthMiddleware = createMiddleware(async (c, next) => {
     return c.json({ success: false, message: "This agent is inactive" }, 403);
   }
 
-  const allowedOrigin = result.targetWebsiteUrl.targetWebsiteUrl;
+  const allowedOrigin = normalizeOrigin(result.settings.targetWebsiteUrl);
 
   if (!allowedOrigin || requestOrigin !== allowedOrigin) {
     return c.json(
@@ -68,7 +83,6 @@ export const widgetAuthMiddleware = createMiddleware(async (c, next) => {
     );
   }
 
-  // Update last-used timestamp after successful authentication.
   await db
     .update(agentWidgetKeys)
     .set({ lastUsedAt: new Date() })

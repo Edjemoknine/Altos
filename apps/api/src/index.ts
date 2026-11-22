@@ -17,7 +17,12 @@ app.use(
   cors({
     origin: process.env.FRONTEND_URL!,
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization", "X-Widget-Key"],
+    allowHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Widget-Key",
+      "X-Widget-Origin",
+    ],
     credentials: true,
   }),
 );

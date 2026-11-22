@@ -3,6 +3,33 @@ import { streamSSE } from "hono/streaming";
 import { streamChatResponse } from "../services/ai/chat/chat.service.ts";
 import { restoreVisitorConversation } from "../services/ai/chat/conversation.service.ts";
 import { widgetAuthMiddleware } from "../middlewares/widget-auth.middleware.ts";
+import {
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  type UIMessage,
+} from "ai";
+
+type PublicChatSource = {
+  documentId: string;
+  chunkId: string;
+  sourceId: string;
+  title: string;
+  url: string | null;
+  snippet: string;
+};
+
+type PublicChatUIMessage = UIMessage<
+  never,
+  {
+    conversation: {
+      conversationId: string;
+    };
+    sources: PublicChatSource[];
+    messageId: {
+      messageId: string;
+    };
+  }
+>;
 const chatRoutes = new Hono();
 
 const MAX_MESSAGE_LENGTH = 4000;
@@ -75,36 +102,95 @@ chatRoutes.post("/:publicId/messages", async (c) => {
     return c.json({ success: false, message: "Invalid chat request" }, 400);
   }
 
-  return streamSSE(c, async (stream) => {
-    try {
-      const generator = streamChatResponse({
-        publicId,
-        ...input,
-      });
+  const stream = createUIMessageStream<PublicChatUIMessage>({
+    execute: async ({ writer }) => {
+      const textId = "assistant-response";
+      let textStarted = false;
 
-      for await (const event of generator) {
-        await stream.writeSSE({
-          event: event.type,
-          data: JSON.stringify(event),
-        });
-      }
-    } catch (error) {
-      // Keep internal errors in server logs, never in the public response.
-      console.error("Public chat stream failed:", error);
+      writer.write({ type: "start" });
 
       try {
-        await stream.writeSSE({
-          event: "error",
-          data: JSON.stringify({
-            type: "error",
-            message: "Unable to generate a response. Please try again.",
-          }),
+        const generator = streamChatResponse({
+          publicId,
+          ...input,
         });
-      } catch {
-        // The client may have disconnected before the error could be sent.
+
+        for await (const event of generator) {
+          switch (event.type) {
+            case "conversation": {
+              writer.write({
+                type: "data-conversation",
+                data: {
+                  conversationId: event.conversationId,
+                },
+                transient: true,
+              });
+              break;
+            }
+
+            case "sources": {
+              writer.write({
+                type: "data-sources",
+                data: event.sources,
+              });
+              break;
+            }
+
+            case "token": {
+              if (!textStarted) {
+                writer.write({
+                  type: "text-start",
+                  id: textId,
+                });
+
+                textStarted = true;
+              }
+
+              writer.write({
+                type: "text-delta",
+                id: textId,
+                delta: event.token,
+              });
+              break;
+            }
+
+            case "done": {
+              if (textStarted) {
+                writer.write({
+                  type: "text-end",
+                  id: textId,
+                });
+              }
+
+              writer.write({
+                type: "data-messageId",
+                data: {
+                  messageId: event.messageId,
+                },
+              });
+              break;
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Public chat stream failed:", error);
+
+        if (textStarted) {
+          writer.write({
+            type: "text-end",
+            id: textId,
+          });
+        }
+
+        writer.write({
+          type: "error",
+          errorText: "Unable to generate a response. Please try again.",
+        });
       }
-    }
+    },
   });
+
+  return createUIMessageStreamResponse({ stream });
 });
 
 function validateRestoreBody(value: unknown): { visitorId: string } | null {
