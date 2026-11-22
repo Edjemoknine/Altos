@@ -9,12 +9,16 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+
 import { organization } from "./organization.ts";
+
 export type AgentTone = "professional" | "friendly" | "casual" | "formal";
+
 export type AgentSettings = {
   tone: AgentTone;
   targetWebsiteUrl: string;
 };
+
 export const agents = pgTable(
   "agents",
   {
@@ -25,8 +29,8 @@ export const agents = pgTable(
     name: varchar("name").notNull(),
     description: text("description").notNull(),
     instructions: text("instructions").notNull(),
+    logoUrl: text("logo_url"),
     status: varchar("status").default("active").notNull(),
-    publicId: uuid("public_id").defaultRandom().notNull().unique(),
     settings: jsonb("settings")
       .$type<AgentSettings>()
       .default({
@@ -34,6 +38,7 @@ export const agents = pgTable(
         targetWebsiteUrl: "",
       })
       .notNull(),
+    publicId: uuid("public_id").defaultRandom().notNull().unique(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -42,6 +47,7 @@ export const agents = pgTable(
   },
   (table) => [
     index("agents_organizationId_idx").on(table.organizationId),
+
     check(
       "agents_status_check",
       sql`${table.status} in ('active', 'inactive')`,

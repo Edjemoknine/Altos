@@ -8,7 +8,9 @@ import { documentChunks } from "./schemas/document-chunk.ts";
 import { ingestionJobs } from "./schemas/ingestion-job.ts";
 import { conversations } from "./schemas/conversations.ts";
 import { messages } from "./schemas/messages.ts";
+import { agentWidgetKeys } from "./schemas/agent-widget-key.ts";
 
+export * from "./schemas/agent-widget-key.ts";
 export * from "./schemas/auth.ts";
 export * from "./schemas/agent.ts";
 export * from "./schemas/organization.ts";

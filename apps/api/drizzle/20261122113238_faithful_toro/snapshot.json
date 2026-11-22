@@ -1,0 +1,81 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "903e8ac4-044f-4c03-98cf-1a62e2af8b9a",
+  "prevIds": [
+    "be1c4149-9d90-4fc7-b0b2-1ecd4b37083f"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "agents",
+        "widget_key_hash"
+      ],
+      "writes": [
+        "s|col|public.agents.widget_key_hash",
+        "n|col|public.agents.widget_key_hash",
+        "e|col|public.agents.widget_key_hash"
+      ],
+      "reads": [
+        "n|tbl|public.agents",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "agents",
+        "widget_key_created_at"
+      ],
+      "writes": [
+        "s|col|public.agents.widget_key_created_at",
+        "n|col|public.agents.widget_key_created_at",
+        "e|col|public.agents.widget_key_created_at"
+      ],
+      "reads": [
+        "n|tbl|public.agents",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "agents",
+        "name": "widget_key_hash",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "agents",
+        "name": "widget_key_created_at",
+        "type": "timestamp",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

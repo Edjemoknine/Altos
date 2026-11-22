@@ -1,0 +1,47 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "be1c4149-9d90-4fc7-b0b2-1ecd4b37083f",
+  "prevIds": [
+    "91ca5b7d-cf1b-4afc-85f2-496fca78805f"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "agents",
+        "logo_url"
+      ],
+      "writes": [
+        "s|col|public.agents.logo_url",
+        "n|col|public.agents.logo_url",
+        "e|col|public.agents.logo_url"
+      ],
+      "reads": [
+        "n|tbl|public.agents",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "agents",
+        "name": "logo_url",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}
