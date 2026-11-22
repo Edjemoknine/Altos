@@ -28,9 +28,7 @@ function getConfigurationValues(agent: Agent): AgentConfigurationFormValues {
     tone: getAgentTone(agent),
     description: agent.description,
     website:
-      typeof agent.settings.website === "string"
-        ? agent.settings.website
-        : "",
+      typeof agent.settings.website === "string" ? agent.settings.website : "",
     prompt: agent.instructions,
   };
 }
@@ -120,12 +118,12 @@ export function AgentConfigurationTab({ agent }: { agent: Agent }) {
               id="detail-tone"
               {...register("tone")}
             >
-              <NativeSelectOption value="Professional">
+              <NativeSelectOption value="professional">
                 Professional
               </NativeSelectOption>
-              <NativeSelectOption value="Friendly">Friendly</NativeSelectOption>
-              <NativeSelectOption value="Casual">Casual</NativeSelectOption>
-              <NativeSelectOption value="Empathic">Empathic</NativeSelectOption>
+              <NativeSelectOption value="friendly">Friendly</NativeSelectOption>
+              <NativeSelectOption value="casual">Casual</NativeSelectOption>
+              <NativeSelectOption value="formal">Formal</NativeSelectOption>
             </NativeSelect>
           </Field>
         </div>

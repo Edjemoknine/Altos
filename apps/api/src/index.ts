@@ -6,6 +6,7 @@ import userRoutes from "./routes/user.routes.ts";
 import agentRoutes from "./routes/agent.routes.ts";
 import organizationRoutes from "./routes/organization.route.ts";
 import { chatRoutes } from "./routes/chat.routes.ts";
+import { agentPreviewRoutes } from "./routes/agent-preview.routes.ts";
 
 // Keep this outside authenticated organization routes.
 const app = new Hono().basePath("/api");
@@ -35,6 +36,7 @@ app.route("/users", userRoutes);
 app.route("/agents", agentRoutes);
 app.route("/organizations", organizationRoutes);
 app.route("/chat", chatRoutes);
+app.route("/agent-preview", agentPreviewRoutes);
 
 export type AppType = typeof app;
 

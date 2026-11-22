@@ -44,7 +44,7 @@ export default function NewAgentPage() {
       name: "",
       description: "",
       website: "",
-      tone: "Friendly",
+      tone: "friendly",
       prompt: "",
     },
   });
@@ -186,7 +186,10 @@ export default function NewAgentPage() {
             />
           </Field>
           {errors.website && (
-            <p className="-mt-4 text-xs text-[#b75d47]" id="agent-website-error">
+            <p
+              className="-mt-4 text-xs text-[#b75d47]"
+              id="agent-website-error"
+            >
               {errors.website.message}
             </p>
           )}
@@ -198,12 +201,12 @@ export default function NewAgentPage() {
               disabled={isSubmitting}
               {...register("tone")}
             >
-              <NativeSelectOption value="Professional">
+              <NativeSelectOption value="professional">
                 Professional
               </NativeSelectOption>
-              <NativeSelectOption value="Friendly">Friendly</NativeSelectOption>
-              <NativeSelectOption value="Casual">Casual</NativeSelectOption>
-              <NativeSelectOption value="Empathic">Empathic</NativeSelectOption>
+              <NativeSelectOption value="friendly">Friendly</NativeSelectOption>
+              <NativeSelectOption value="casual">Casual</NativeSelectOption>
+              <NativeSelectOption value="formal">formal</NativeSelectOption>
             </NativeSelect>
           </Field>
 
@@ -216,7 +219,9 @@ export default function NewAgentPage() {
               className={`${textareaClassName} min-h-36 resize-y`}
               id="agent-prompt"
               aria-invalid={Boolean(errors.prompt)}
-              aria-describedby={errors.prompt ? "agent-prompt-error" : undefined}
+              aria-describedby={
+                errors.prompt ? "agent-prompt-error" : undefined
+              }
               placeholder="You are a helpful customer support assistant. Your job is to answer customer questions using the company's knowledge base..."
               rows={5}
               disabled={isSubmitting}

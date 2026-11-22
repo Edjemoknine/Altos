@@ -9,10 +9,10 @@ import { Panel } from "@/app/(dashboard)/_components/dashboard-ui";
 
 type TestAgentTabProps = {
   agentName: string;
-  publicId: string;
+  agentId: string;
 };
 
-export function TestAgentTab({ agentName, publicId }: TestAgentTabProps) {
+export function TestAgentTab({ agentName, agentId }: TestAgentTabProps) {
   const {
     addVoicePreview,
     canSendMessage,
@@ -20,8 +20,7 @@ export function TestAgentTab({ agentName, publicId }: TestAgentTabProps) {
     isSending,
     messages,
     sendMessage,
-  } = useTestAgentConversation({ agentName, publicId });
-
+  } = useTestAgentConversation({ agentName, agentId });
   return (
     <Panel className="max-w-3xl overflow-hidden">
       <div className="flex items-center justify-between border-b border-[#eff1ec] px-5 py-4 sm:px-6">
@@ -50,7 +49,7 @@ export function TestAgentTab({ agentName, publicId }: TestAgentTabProps) {
       <TestAgentMessages messages={messages} />
 
       <TestAgentComposer
-        key={publicId}
+        key={agentId}
         canSendMessage={canSendMessage}
         isRestoring={isRestoring}
         isSending={isSending}

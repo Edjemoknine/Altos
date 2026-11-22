@@ -4,8 +4,6 @@ import { chatModel } from "../models/chat-model.ts";
 import { retrieveRelevantChunks } from "../retrieval/retrieval.service.ts";
 import { buildChatPrompt } from "../retrieval/prompt.ts";
 
-import { getActiveAgentByPublicId } from "../chat/agent-chat.service.ts";
-
 import {
   createConversation,
   getConversationHistory,
@@ -15,14 +13,16 @@ import {
 import { createMessage } from "../chat/message.service.ts";
 
 import type { MessageSource } from "../../../db/schema.ts";
+import { getActiveAgentByPublicId } from "./agent-chat.service.ts";
 
 const MAX_MESSAGE_LENGTH = 4000;
 
-type SendChatMessageInput = {
+export type SendChatMessageInput = {
   publicId: string;
   visitorId: string;
   conversationId?: string;
   message: string;
+  organizationId?: string;
 };
 
 export type ChatStreamEvent =
@@ -88,6 +88,7 @@ export async function* streamChatResponse({
   visitorId,
   conversationId,
   message,
+  organizationId,
 }: SendChatMessageInput): AsyncGenerator<ChatStreamEvent> {
   // 1. Validate the incoming message.
   const normalizedMessage = message.trim();
@@ -101,7 +102,7 @@ export async function* streamChatResponse({
   }
 
   // 2. Resolve the active agent.
-  const agent = await getActiveAgentByPublicId(publicId);
+  const agent = await getActiveAgentByPublicId(publicId, organizationId);
 
   if (!agent) {
     throw new Error("Agent not found or inactive");

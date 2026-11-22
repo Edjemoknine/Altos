@@ -1,8 +1,8 @@
 export const agentTones = [
-  "Professional",
-  "Friendly",
-  "Casual",
-  "Empathic",
+  "professional",
+  "friendly",
+  "casual",
+  "formal",
 ] as const;
 
 export type AgentTone = (typeof agentTones)[number];

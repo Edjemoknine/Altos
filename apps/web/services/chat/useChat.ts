@@ -9,30 +9,28 @@ import {
   type SendChatMessageInput,
 } from "@/services/chat/chat.service";
 
-type MutationInput = Omit<SendChatMessageInput, "onEvent"> & {
-  onEvent: SendChatMessageInput["onEvent"];
-};
+type MutationInput = SendChatMessageInput;
 
 export function useSendChatMessage() {
   return useMutation<void, Error, MutationInput>({
-    mutationFn: (input) => sendChatMessage(input),
+    mutationFn: sendChatMessage,
   });
 }
 
 export function useRestoreChatConversation(
-  publicId: string,
+  agentId: string,
   visitorId: string | null,
 ) {
   return useQuery<RestoreConversationResult, Error>({
-    queryKey: ["public-chat", "restore", publicId, visitorId],
+    queryKey: ["agent-preview", "restore", agentId, visitorId],
     queryFn: () => {
       if (!visitorId) {
         throw new Error("Visitor ID is not available");
       }
 
-      return restoreChatConversation({ publicId, visitorId });
+      return restoreChatConversation({ agentId, visitorId });
     },
-    enabled: Boolean(publicId && visitorId),
+    enabled: Boolean(agentId && visitorId),
     refetchOnWindowFocus: false,
     retry: false,
     staleTime: 0,

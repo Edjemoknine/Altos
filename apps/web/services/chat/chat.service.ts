@@ -1,5 +1,3 @@
-// src/services/chat/chat.service.ts
-
 export type ChatSource = {
   documentId: string;
   chunkId: string;
@@ -17,7 +15,7 @@ export type ChatStreamEvent =
   | { type: "error"; message: string };
 
 export type SendChatMessageInput = {
-  publicId: string;
+  agentId: string;
   visitorId: string;
   conversationId?: string;
   message: string;
@@ -47,7 +45,7 @@ export type RestoreConversationResult = {
 };
 
 type RestoreConversationInput = {
-  publicId: string;
+  agentId: string;
   visitorId: string;
 };
 
@@ -67,7 +65,6 @@ function parseSSEBlock(block: string): ChatStreamEvent | null {
 
   const payload = JSON.parse(dataLines.join("\n")) as ChatStreamEvent;
 
-  // The server sends both an SSE event name and a JSON `type`.
   return {
     ...payload,
     type: eventName || payload.type,
@@ -75,7 +72,7 @@ function parseSSEBlock(block: string): ChatStreamEvent | null {
 }
 
 export async function sendChatMessage({
-  publicId,
+  agentId,
   visitorId,
   conversationId,
   message,
@@ -87,9 +84,10 @@ export async function sendChatMessage({
   }
 
   const response = await fetch(
-    `${API_URL}/api/chat/${encodeURIComponent(publicId)}/messages`,
+    `${API_URL}/api/agent-preview/${encodeURIComponent(agentId)}/messages`,
     {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
         Accept: "text/event-stream",
@@ -141,7 +139,6 @@ export async function sendChatMessage({
       }
     }
 
-    // Process any final event left in the buffer.
     buffer += decoder.decode();
 
     if (buffer.trim()) {
@@ -159,7 +156,7 @@ export async function sendChatMessage({
 }
 
 export async function restoreChatConversation({
-  publicId,
+  agentId,
   visitorId,
 }: RestoreConversationInput): Promise<RestoreConversationResult> {
   if (!API_URL) {
@@ -167,12 +164,13 @@ export async function restoreChatConversation({
   }
 
   const response = await fetch(
-    `${API_URL}/api/chat/${encodeURIComponent(publicId)}/conversations/restore`,
+    `${API_URL}/api/agent-preview/${encodeURIComponent(agentId)}/conversations/restore`,
     {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify({ visitorId }),
     },
   );
@@ -180,7 +178,16 @@ export async function restoreChatConversation({
   const result = await response.json().catch(() => null);
 
   if (!response.ok || !result?.success) {
-    throw new Error(result?.message ?? "Unable to restore conversation");
+    console.error("Restore conversation failed:", {
+      status: response.status,
+      statusText: response.statusText,
+      response: result,
+    });
+
+    throw new Error(
+      result?.message ??
+        `Unable to restore conversation (HTTP ${response.status})`,
+    );
   }
 
   return result.data as RestoreConversationResult;

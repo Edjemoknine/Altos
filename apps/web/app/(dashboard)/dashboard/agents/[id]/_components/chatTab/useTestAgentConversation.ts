@@ -12,13 +12,13 @@ import { uniqueSourcesByDocument } from "./test-agent-chat.types";
 import type { TestChatMessage } from "./test-agent-chat.types";
 
 type UseTestAgentConversationProps = {
+  agentId: string;
   agentName: string;
-  publicId: string;
 };
 
 export function useTestAgentConversation({
   agentName,
-  publicId,
+  agentId,
 }: UseTestAgentConversationProps) {
   const [visitorId, setVisitorId] = useState<string | null>(null);
   const [isRestoring, setIsRestoring] = useState(true);
@@ -31,11 +31,11 @@ export function useTestAgentConversation({
   ]);
   const [conversationId, setConversationId] = useState<string | undefined>();
 
-  const restoreQuery = useRestoreChatConversation(publicId, visitorId);
+  const restoreQuery = useRestoreChatConversation(agentId, visitorId);
   const sendMessageMutation = useSendChatMessage();
 
   useEffect(() => {
-    const storageKey = `test-agent-visitor-${publicId}`;
+    const storageKey = `test-agent-visitor-${agentId}`;
     let storedVisitorId = sessionStorage.getItem(storageKey);
 
     if (!storedVisitorId) {
@@ -53,7 +53,7 @@ export function useTestAgentConversation({
         text: `Hi! I’m ${agentName}. What can I help you with?`,
       },
     ]);
-  }, [publicId, agentName]);
+  }, [agentId, agentName]);
 
   useEffect(() => {
     if (!visitorId || !restoreQuery.isFetched) return;
@@ -144,7 +144,7 @@ export function useTestAgentConversation({
 
     try {
       await sendMessageMutation.mutateAsync({
-        publicId,
+        agentId,
         visitorId,
         conversationId,
         message: text,
