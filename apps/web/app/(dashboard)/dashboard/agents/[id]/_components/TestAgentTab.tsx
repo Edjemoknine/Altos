@@ -5,8 +5,22 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { AudioLines, Bot, Mic, Volume2 } from "lucide-react";
 
+import { Bubble, BubbleContent } from "@repo/ui/components/bubble";
 import { Button } from "@repo/ui/components/button";
 import { Input } from "@repo/ui/components/input";
+import {
+  Message,
+  MessageAvatar,
+  MessageContent,
+} from "@repo/ui/components/message";
+import {
+  MessageScroller,
+  MessageScrollerButton,
+  MessageScrollerContent,
+  MessageScrollerItem,
+  MessageScrollerProvider,
+  MessageScrollerViewport,
+} from "@repo/ui/components/message-scroller";
 
 import {
   inputClassName,
@@ -25,10 +39,25 @@ type TestAgentTabProps = {
   publicId: string;
 };
 
+type TestChatMessage = ChatMessage & {
+  sources?: ChatSource[];
+};
+
+function uniqueSourcesByDocument(sources: ChatSource[]) {
+  const seenDocumentIds = new Set<string>();
+
+  return sources.filter((source) => {
+    if (seenDocumentIds.has(source.documentId)) return false;
+
+    seenDocumentIds.add(source.documentId);
+    return true;
+  });
+}
+
 export function TestAgentTab({ agentName, publicId }: TestAgentTabProps) {
   const [isRecording, setIsRecording] = useState(false);
 
-  const [messages, setMessages] = useState<ChatMessage[]>([
+  const [messages, setMessages] = useState<TestChatMessage[]>([
     {
       id: 1,
       role: "assistant",
@@ -37,8 +66,6 @@ export function TestAgentTab({ agentName, publicId }: TestAgentTabProps) {
   ]);
 
   const [conversationId, setConversationId] = useState<string | undefined>();
-
-  const [sources, setSources] = useState<ChatSource[]>([]);
 
   const visitorIdRef = useRef<string | null>(null);
 
@@ -59,7 +86,6 @@ export function TestAgentTab({ agentName, publicId }: TestAgentTabProps) {
   useEffect(() => {
     visitorIdRef.current = null;
     setConversationId(undefined);
-    setSources([]);
     setIsRecording(false);
 
     setMessages([
@@ -112,7 +138,6 @@ export function TestAgentTab({ agentName, publicId }: TestAgentTabProps) {
       },
     ]);
 
-    setSources([]);
     reset();
 
     function handleChatEvent(event: ChatStreamEvent) {
@@ -122,7 +147,13 @@ export function TestAgentTab({ agentName, publicId }: TestAgentTabProps) {
           break;
 
         case "sources":
-          setSources(event.sources);
+          setMessages((current) =>
+            current.map((item) =>
+              item.id === assistantMessageId
+                ? { ...item, sources: uniqueSourcesByDocument(event.sources) }
+                : item,
+            ),
+          );
           break;
 
         case "token":
@@ -209,57 +240,91 @@ export function TestAgentTab({ agentName, publicId }: TestAgentTabProps) {
         </span>
       </div>
 
-      <div
-        aria-live="polite"
-        className="flex max-h-[360px] min-h-[250px] flex-col gap-4 overflow-y-auto bg-[#fbfcfa] px-5 py-5 sm:px-6"
-      >
-        {messages.map((message) => (
-          <div
-            className={`flex items-end gap-2.5 ${
-              message.role === "user" ? "justify-end" : ""
-            }`}
-            key={message.id}
+      <MessageScrollerProvider>
+        <MessageScroller className="h-[360px] min-h-[250px] max-h-[360px] bg-[#fbfcfa]">
+          <MessageScrollerViewport
+            aria-live="polite"
+            className="px-5 py-5 sm:px-6"
           >
-            {message.role === "assistant" && (
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#eaf1e1] text-[#66834e]">
-                <Bot className="size-3.5" />
-              </span>
-            )}
+            <MessageScrollerContent className="gap-4">
+              {messages.map((message, index) => (
+                <MessageScrollerItem
+                  key={message.id}
+                  scrollAnchor={index === messages.length - 1}
+                >
+                  <Message
+                    align={message.role === "user" ? "end" : "start"}
+                    className="items-end gap-2.5"
+                  >
+                    {message.role === "assistant" && (
+                      <MessageAvatar className="size-7 rounded-lg bg-[#eaf1e1] text-[#66834e]">
+                        <Bot className="size-3.5" />
+                      </MessageAvatar>
+                    )}
 
-            <p
-              className={`max-w-[82%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-xs leading-5 ${
-                message.role === "user"
-                  ? "rounded-br-sm bg-[#17221b] text-white"
-                  : "rounded-bl-sm border border-[#ebeee8] bg-white text-[#536052]"
-              }`}
-            >
-              {message.text || (
-                <span className="animate-pulse">Thinking...</span>
-              )}
-            </p>
-          </div>
-        ))}
-      </div>
+                    <MessageContent className="max-w-[82%] gap-0">
+                      <Bubble
+                        align={message.role === "user" ? "end" : "start"}
+                        variant={
+                          message.role === "user" ? "default" : "outline"
+                        }
+                        className="max-w-full"
+                      >
+                        <BubbleContent
+                          className={`whitespace-pre-wrap text-xs leading-5 ${
+                            message.role === "user"
+                              ? "rounded-br-sm"
+                              : "rounded-bl-sm border-[#ebeee8] text-[#536052]"
+                          }`}
+                        >
+                          {message.text || (
+                            <span className="animate-pulse">Thinking...</span>
+                          )}
+                        </BubbleContent>
+                      </Bubble>
 
-      {sources.length > 0 && (
-        <div className="border-t border-[#eff1ec] bg-[#fbfcfa] px-5 py-3 sm:px-6">
-          <p className="mb-2 text-[11px] font-semibold text-[#536052]">
-            Retrieved sources
-          </p>
+                      {message.sources && message.sources.length > 0 && (
+                        <div
+                          aria-label="Sources for this response"
+                          className="mt-1 flex flex-wrap items-center gap-1.5"
+                        >
+                          <span className="text-[10px] text-[#879087]">
+                            Sources
+                          </span>
+                          {message.sources.map((source) =>
+                            source.url ? (
+                              <a
+                                className="max-w-[180px] truncate rounded-full border border-[#e5eae0] bg-white px-2 py-0.5 text-[10px] leading-4 text-[#63775b] hover:bg-[#f1f5ed]"
+                                href={source.url}
+                                key={source.documentId}
+                                rel="noreferrer"
+                                target="_blank"
+                                title={source.snippet}
+                              >
+                                {source.title}
+                              </a>
+                            ) : (
+                              <span
+                                className="max-w-[180px] truncate rounded-full border border-[#e5eae0] bg-white px-2 py-0.5 text-[10px] leading-4 text-[#63775b]"
+                                key={source.documentId}
+                                title={source.snippet}
+                              >
+                                {source.title}
+                              </span>
+                            ),
+                          )}
+                        </div>
+                      )}
+                    </MessageContent>
+                  </Message>
+                </MessageScrollerItem>
+              ))}
+            </MessageScrollerContent>
+          </MessageScrollerViewport>
 
-          <div className="flex flex-wrap gap-2">
-            {sources.map((source) => (
-              <span
-                key={source.chunkId}
-                className="max-w-full truncate rounded-lg border border-[#e5eae0] bg-white px-2.5 py-1.5 text-[10px] text-[#63775b]"
-                title={source.title}
-              >
-                {source.title}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
+          <MessageScrollerButton />
+        </MessageScroller>
+      </MessageScrollerProvider>
 
       {isRecording && (
         <p
