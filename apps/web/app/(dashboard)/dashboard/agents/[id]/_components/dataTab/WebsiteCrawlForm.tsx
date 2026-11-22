@@ -15,7 +15,7 @@ import {
   Field,
   inputClassName,
   Panel,
-} from "../../../../_components/dashboard-ui";
+} from "@/app/(dashboard)/_components/dashboard-ui";
 import type { SourceListProps } from "@/types/agents/configs";
 
 export function WebsiteCrawlForm({

@@ -27,6 +27,30 @@ export type SendChatMessageInput = {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+export type RestoredChatMessage = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  sources: ChatSource[];
+  createdAt: string;
+};
+
+export type RestoreConversationResult = {
+  conversation: {
+    id: string;
+    title: string;
+    status: "active";
+    createdAt: string;
+    updatedAt: string;
+  } | null;
+  messages: RestoredChatMessage[];
+};
+
+type RestoreConversationInput = {
+  publicId: string;
+  visitorId: string;
+};
+
 function parseSSEBlock(block: string): ChatStreamEvent | null {
   let eventName = "";
   const dataLines: string[] = [];
@@ -132,4 +156,32 @@ export async function sendChatMessage({
   } finally {
     reader.releaseLock();
   }
+}
+
+export async function restoreChatConversation({
+  publicId,
+  visitorId,
+}: RestoreConversationInput): Promise<RestoreConversationResult> {
+  if (!API_URL) {
+    throw new Error("API URL is not configured");
+  }
+
+  const response = await fetch(
+    `${API_URL}/api/chat/${encodeURIComponent(publicId)}/conversations/restore`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ visitorId }),
+    },
+  );
+
+  const result = await response.json().catch(() => null);
+
+  if (!response.ok || !result?.success) {
+    throw new Error(result?.message ?? "Unable to restore conversation");
+  }
+
+  return result.data as RestoreConversationResult;
 }

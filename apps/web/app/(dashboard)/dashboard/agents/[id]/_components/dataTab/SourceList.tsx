@@ -9,10 +9,10 @@ import {
   useRetryAgentSource,
   type AgentSource,
 } from "@/services/source.service";
-import { Panel } from "../../../../_components/dashboard-ui";
 import type { SourceListProps } from "@/types/agents/configs";
 import { DeleteSourceDialog, type SourceToDelete } from "./DeleteSourceDialog";
 import { SourceItem } from "./SourceItem";
+import { Panel } from "@/app/(dashboard)/_components/dashboard-ui";
 
 export function SourceList({
   agentId,

@@ -1,6 +1,7 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
+
 import { db } from "../../../db/index.ts";
-import { conversations, messages } from "../../../db/schema.ts";
+import { agents, conversations, messages } from "../../../db/schema.ts";
 
 const HISTORY_LIMIT = 10;
 
@@ -67,7 +68,74 @@ export async function getConversationHistory(conversationId: string) {
     .orderBy(desc(messages.createdAt))
     .limit(HISTORY_LIMIT);
 
-  // The database query gets the latest messages first.
-  // Reverse them to preserve chronological order for the LLM.
   return history.reverse();
+}
+
+type RestoreVisitorConversationInput = {
+  publicId: string;
+  visitorId: string;
+};
+
+export async function restoreVisitorConversation({
+  publicId,
+  visitorId,
+}: RestoreVisitorConversationInput) {
+  // Resolve the public agent identifier without exposing internal agent IDs.
+  const [agent] = await db
+    .select({
+      id: agents.id,
+      organizationId: agents.organizationId,
+    })
+    .from(agents)
+    .where(and(eq(agents.publicId, publicId), eq(agents.status, "active")))
+    .limit(1);
+
+  if (!agent) {
+    return null;
+  }
+
+  // Restore only the visitor's latest active conversation for this agent.
+  const [conversation] = await db
+    .select({
+      id: conversations.id,
+      title: conversations.title,
+      status: conversations.status,
+      createdAt: conversations.createdAt,
+      updatedAt: conversations.updatedAt,
+    })
+    .from(conversations)
+    .where(
+      and(
+        eq(conversations.agentId, agent.id),
+        eq(conversations.organizationId, agent.organizationId),
+        eq(conversations.visitorId, visitorId),
+        eq(conversations.status, "active"),
+      ),
+    )
+    .orderBy(desc(conversations.updatedAt))
+    .limit(1);
+
+  if (!conversation) {
+    return {
+      conversation: null,
+      messages: [],
+    };
+  }
+
+  const conversationMessages = await db
+    .select({
+      id: messages.id,
+      role: messages.role,
+      content: messages.content,
+      sources: messages.sources,
+      createdAt: messages.createdAt,
+    })
+    .from(messages)
+    .where(eq(messages.conversationId, conversation.id))
+    .orderBy(asc(messages.createdAt));
+
+  return {
+    conversation,
+    messages: conversationMessages,
+  };
 }

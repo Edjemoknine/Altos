@@ -3,13 +3,13 @@
 import { useState, type ChangeEvent } from "react";
 import { Check, FileText, LoaderCircle, Upload } from "lucide-react";
 import { Input } from "@repo/ui/components/input";
-import { Panel } from "../../../../_components/dashboard-ui";
 import { documentFileSchema } from "@/schemas/agents";
 import {
   useAgentSources,
   useUploadAgentDocument,
 } from "@/services/source.service";
 import type { DocumentUploadProps, UploadStage } from "@/types/agents/configs";
+import { Panel } from "@/app/(dashboard)/_components/dashboard-ui";
 
 const uploadStageLabels: Record<Exclude<UploadStage, "idle">, string> = {
   uploading: "Uploading file to secure storage…",

@@ -7,8 +7,8 @@ import { AgentApiKeyProvider } from "./AgentApiKeyContext";
 import { AgentConfigurationTab } from "./AgentConfigurationTab";
 import { ApiKeyTab } from "./ApiKeyTab";
 import { EmbedWidgetTab } from "./EmbedWidgetTab";
-import { KnowledgeBaseTab } from "./KnowledgeBaseTab";
-import { TestAgentTab } from "./TestAgentTab";
+import { TestAgentTab } from "./chatTab/TestAgentTab";
+import { KnowledgeBaseTab } from "./dataTab/KnowledgeBaseTab";
 
 type AgentTab = "configuration" | "knowledge" | "api-key" | "embed" | "test";
 
