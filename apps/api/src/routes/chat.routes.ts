@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
-
 import { streamChatResponse } from "../services/ai/chat/chat.service.ts";
 import { restoreVisitorConversation } from "../services/ai/chat/conversation.service.ts";
+import { widgetAuthMiddleware } from "../middlewares/widget-auth.middleware.ts";
 const chatRoutes = new Hono();
 
 const MAX_MESSAGE_LENGTH = 4000;
@@ -17,7 +17,7 @@ type PublicChatBody = {
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
-
+chatRoutes.use("/:publicId/*", widgetAuthMiddleware);
 function validateChatBody(value: unknown): PublicChatBody | null {
   if (!isRecord(value)) return null;
 
