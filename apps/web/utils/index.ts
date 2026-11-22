@@ -1,17 +1,17 @@
-import type { AgentSource } from "@/services/source.service";
+import type { AgentSource } from "@/services/agent/source.service";
 import { agentTones, type Agent, type AgentTone } from "@/types/agents";
 import { FileSpreadsheet, FileText, Globe2 } from "lucide-react";
 const toneStyles: Record<AgentTone, string> = {
-  Professional: "bg-[#eef1f8] text-[#677493]",
-  Friendly: "bg-[#eff5e9] text-[#67834d]",
-  Casual: "bg-[#f9f1e7] text-[#aa7b4c]",
-  Empathic: "bg-[#f5edf4] text-[#9a6f91]",
+  professional: "bg-[#eef1f8] text-[#677493]",
+  friendly: "bg-[#eff5e9] text-[#67834d]",
+  casual: "bg-[#f9f1e7] text-[#aa7b4c]",
+  formal: "bg-[#f5edf4] text-[#9a6f91]",
 };
 
 const tones = agentTones;
 
 function getAgentTone(agent: Agent): AgentTone {
-  return tones.find((tone) => tone === agent.settings.tone) ?? "Friendly";
+  return tones.find((tone) => tone === agent.settings.tone) ?? "friendly";
 }
 
 function getAgentWebsite(agent: Agent) {

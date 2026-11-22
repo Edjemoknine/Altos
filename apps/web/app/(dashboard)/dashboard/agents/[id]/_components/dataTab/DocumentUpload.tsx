@@ -7,7 +7,7 @@ import { documentFileSchema } from "@/schemas/agents";
 import {
   useAgentSources,
   useUploadAgentDocument,
-} from "@/services/source.service";
+} from "@/services/agent/source.service";
 import type { DocumentUploadProps, UploadStage } from "@/types/agents/configs";
 import { Panel } from "@/app/(dashboard)/_components/dashboard-ui";
 

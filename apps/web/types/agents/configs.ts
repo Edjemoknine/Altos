@@ -1,7 +1,7 @@
 import type {
   AgentDocumentUploadStage,
   AgentSource,
-} from "@/services/source.service";
+} from "@/services/agent/source.service";
 export type UploadStage =
   | "idle"
   | "uploading"

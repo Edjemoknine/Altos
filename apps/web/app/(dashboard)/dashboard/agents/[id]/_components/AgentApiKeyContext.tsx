@@ -1,26 +1,25 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useState,
-  type Dispatch,
-  type ReactNode,
-  type SetStateAction,
-} from "react";
+import { createContext, useContext, useState, type ReactNode } from "react";
+
+type CreatedWidgetKey = {
+  id: string;
+  name: string;
+  key: string;
+};
 
 type AgentApiKeyContextValue = {
-  apiKey: string;
-  setApiKey: Dispatch<SetStateAction<string>>;
+  createdKey: CreatedWidgetKey | null;
+  setCreatedKey: (key: CreatedWidgetKey | null) => void;
 };
 
 const AgentApiKeyContext = createContext<AgentApiKeyContextValue | null>(null);
 
 export function AgentApiKeyProvider({ children }: { children: ReactNode }) {
-  const [apiKey, setApiKey] = useState("");
+  const [createdKey, setCreatedKey] = useState<CreatedWidgetKey | null>(null);
 
   return (
-    <AgentApiKeyContext.Provider value={{ apiKey, setApiKey }}>
+    <AgentApiKeyContext.Provider value={{ createdKey, setCreatedKey }}>
       {children}
     </AgentApiKeyContext.Provider>
   );
@@ -28,8 +27,10 @@ export function AgentApiKeyProvider({ children }: { children: ReactNode }) {
 
 export function useAgentApiKey() {
   const context = useContext(AgentApiKeyContext);
+
   if (!context) {
     throw new Error("useAgentApiKey must be used within AgentApiKeyProvider");
   }
+
   return context;
 }

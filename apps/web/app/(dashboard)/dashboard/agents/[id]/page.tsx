@@ -6,9 +6,9 @@ import { ArrowLeft } from "lucide-react";
 import { Badge } from "@repo/ui/components/badge";
 import { Button } from "@repo/ui/components/button";
 import { authClient } from "@/auth/auth-client";
-import { useAgent } from "@/services/agent.service";
 import { PageHeading, Panel } from "../../../_components/dashboard-ui";
 import { AgentTabs } from "./_components/AgentTabs";
+import { useAgent } from "@/services/agent/agent.service";
 
 export default function AgentDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -39,9 +39,7 @@ export default function AgentDetailPage() {
           Select an organization to view this agent.
         </Panel>
       ) : agentQuery.isPending ? (
-        <Panel className="p-6 text-sm text-[#879087]">
-          Loading agent...
-        </Panel>
+        <Panel className="p-6 text-sm text-[#879087]">Loading agent...</Panel>
       ) : agentQuery.isError ? (
         <Panel className="flex flex-col items-start gap-3 p-6">
           <p className="text-sm font-semibold text-[#344137]">
@@ -66,7 +64,9 @@ export default function AgentDetailPage() {
           <PageHeading
             eyebrow="Agent settings"
             title={agent.name}
-            description={[agent.description, website].filter(Boolean).join(" · ")}
+            description={[agent.description, website]
+              .filter(Boolean)
+              .join(" · ")}
             action={
               <Badge
                 className={`h-auto gap-1.5 rounded-full border-0 px-2.5 py-1.5 text-[10px] font-semibold ${
@@ -77,9 +77,7 @@ export default function AgentDetailPage() {
               >
                 <span
                   className={`size-1.5 rounded-full ${
-                    agent.status === "active"
-                      ? "bg-[#8ab45e]"
-                      : "bg-[#a2aaa0]"
+                    agent.status === "active" ? "bg-[#8ab45e]" : "bg-[#a2aaa0]"
                   }`}
                 />{" "}
                 {agent.status}

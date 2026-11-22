@@ -14,7 +14,6 @@ import {
 import { Textarea } from "@repo/ui/components/textarea";
 
 import { authClient } from "@/auth/auth-client";
-import { useCreateAgent } from "@/services/agent.service";
 import { createAgentSchema } from "@/schemas/agents";
 import type { CreateAgentFormValues } from "@/types/agents";
 
@@ -26,6 +25,7 @@ import {
   PrimaryButton,
   textareaClassName,
 } from "../../../_components/dashboard-ui";
+import { useCreateAgent } from "@/services/agent/agent.service";
 
 export default function NewAgentPage() {
   const router = useRouter();

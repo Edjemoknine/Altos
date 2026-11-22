@@ -8,7 +8,7 @@ import {
   useDeleteAgentSource,
   useRetryAgentSource,
   type AgentSource,
-} from "@/services/source.service";
+} from "@/services/agent/source.service";
 import type { SourceListProps } from "@/types/agents/configs";
 import { DeleteSourceDialog, type SourceToDelete } from "./DeleteSourceDialog";
 import { SourceItem } from "./SourceItem";

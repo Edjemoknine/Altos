@@ -16,7 +16,6 @@ import {
   Trash2,
 } from "lucide-react";
 import { authClient } from "@/auth/auth-client";
-import { useAgents, useDeleteAgent } from "@/services/agent.service";
 import type { Agent } from "@/types/agents";
 import { PageHeading, Panel } from "../../_components/dashboard-ui";
 import { DeleteAgentDialog } from "../../_components/delete-agent";
@@ -26,6 +25,7 @@ import {
   getAgentWebsite,
   toneStyles,
 } from "@/utils";
+import { useAgents, useDeleteAgent } from "@/services/agent/agent.service";
 export default function AgentsPage() {
   const { data: activeOrganization, isPending: isOrganizationPending } =
     authClient.useActiveOrganization();
@@ -46,7 +46,9 @@ export default function AgentsPage() {
       },
       onError: (error) => {
         setDeleteError(
-          error instanceof Error ? error.message : "Unable to delete the agent.",
+          error instanceof Error
+            ? error.message
+            : "Unable to delete the agent.",
         );
       },
     });

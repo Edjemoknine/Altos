@@ -20,7 +20,7 @@ import {
 import { agentConfigurationSchema } from "@/schemas/agents";
 import type { Agent, AgentConfigurationFormValues } from "@/types/agents";
 import { getAgentTone } from "@/utils";
-import { useUpdateAgent } from "@/services/agent.service";
+import { useUpdateAgent } from "@/services/agent/agent.service";
 
 function getConfigurationValues(agent: Agent): AgentConfigurationFormValues {
   return {
