@@ -22,6 +22,7 @@ export type Agent = {
   organizationId: string;
   name: string;
   description: string;
+  logoUrl: string | null;
   instructions: string;
   status: "active" | "inactive";
   publicId: string;

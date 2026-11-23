@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { Save } from "lucide-react";
+import { ImageIcon, LoaderCircle, Save, Upload } from "lucide-react";
 import { Input } from "@repo/ui/components/input";
 import {
   NativeSelect,
@@ -20,8 +20,10 @@ import {
 import { agentConfigurationSchema } from "@/schemas/agents";
 import type { Agent, AgentConfigurationFormValues } from "@/types/agents";
 import { getAgentTone } from "@/utils";
-import { useUpdateAgent } from "@/services/agent/agent.service";
-
+import {
+  useUpdateAgent,
+  useUploadAgentLogo,
+} from "@/services/agent/agent.service";
 function getConfigurationValues(agent: Agent): AgentConfigurationFormValues {
   return {
     name: agent.name,
@@ -39,6 +41,53 @@ export function AgentConfigurationTab({ agent }: { agent: Agent }) {
   const [savedNotice, setSavedNotice] = useState("");
   const [saveError, setSaveError] = useState("");
   const updateAgentMutation = useUpdateAgent(agent.organizationId, agent.id);
+  const [logoPreview, setLogoPreview] = useState<string | null>(
+    agent.logoUrl ?? null,
+  );
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoError, setLogoError] = useState("");
+  const uploadLogoMutation = useUploadAgentLogo(agent.organizationId, agent.id);
+  async function handleUploadLogo() {
+    if (!logoFile) return;
+
+    setLogoError("");
+
+    try {
+      const updatedAgent = await uploadLogoMutation.mutateAsync(logoFile);
+
+      setLogoFile(null);
+      setLogoPreview(updatedAgent.logoUrl ?? null);
+      setSavedNotice("Agent logo uploaded successfully.");
+    } catch (error) {
+      setLogoError(
+        error instanceof Error ? error.message : "Unable to upload agent logo.",
+      );
+    }
+  }
+  useEffect(() => {
+    setLogoPreview(agent.logoUrl ?? null);
+    setLogoFile(null);
+  }, [agent.id, agent.logoUrl]);
+  function handleLogoChange(file?: File) {
+    setLogoError("");
+
+    if (!file) return;
+
+    const allowedTypes = ["image/png", "image/jpeg", "image/webp"];
+
+    if (!allowedTypes.includes(file.type)) {
+      setLogoError("Please select a PNG, JPEG, or WebP image.");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setLogoError("Logo must be smaller than 2 MB.");
+      return;
+    }
+
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+  }
   const {
     register,
     handleSubmit,
@@ -52,6 +101,14 @@ export function AgentConfigurationTab({ agent }: { agent: Agent }) {
   useEffect(() => {
     reset(getConfigurationValues(agent));
   }, [agent, reset]);
+
+  useEffect(() => {
+    return () => {
+      if (logoPreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(logoPreview);
+      }
+    };
+  }, [logoPreview]);
 
   async function saveConfiguration(values: AgentConfigurationFormValues) {
     setSavedNotice("");
@@ -96,7 +153,7 @@ export function AgentConfigurationTab({ agent }: { agent: Agent }) {
         onSubmit={handleSubmit(saveConfiguration)}
       >
         <div className="grid gap-4 sm:grid-cols-2">
-          <div>
+          <div className="flex flex-col gap-4">
             <Field id="detail-name" label="Agent name">
               <Input
                 aria-invalid={Boolean(errors.name)}
@@ -112,37 +169,100 @@ export function AgentConfigurationTab({ agent }: { agent: Agent }) {
                 {errors.name.message}
               </p>
             )}
+            <Field id="detail-tone" label="Conversation tone">
+              <NativeSelect
+                className="w-full"
+                disabled={updateAgentMutation.isPending}
+                id="detail-tone"
+                {...register("tone")}
+              >
+                <NativeSelectOption value="professional">
+                  Professional
+                </NativeSelectOption>
+                <NativeSelectOption value="friendly">
+                  Friendly
+                </NativeSelectOption>
+                <NativeSelectOption value="casual">Casual</NativeSelectOption>
+                <NativeSelectOption value="formal">Formal</NativeSelectOption>
+              </NativeSelect>
+            </Field>
           </div>
-          <Field id="detail-tone" label="Conversation tone">
-            <NativeSelect
-              className="w-full"
-              disabled={updateAgentMutation.isPending}
-              id="detail-tone"
-              {...register("tone")}
-            >
-              <NativeSelectOption value="professional">
-                Professional
-              </NativeSelectOption>
-              <NativeSelectOption value="friendly">Friendly</NativeSelectOption>
-              <NativeSelectOption value="casual">Casual</NativeSelectOption>
-              <NativeSelectOption value="formal">Formal</NativeSelectOption>
-            </NativeSelect>
-          </Field>
-        </div>
-        <div>
-          <Field id="detail-description" label="Description">
-            <Input
-              className={inputClassName}
-              disabled={updateAgentMutation.isPending}
-              id="detail-description"
-              {...register("description")}
-            />
-          </Field>
-          {errors.description && (
-            <p className="mt-1 text-xs text-[#b75d47]">
-              {errors.description.message}
-            </p>
-          )}
+          <div className=" flex justify-center flex-col">
+            <Field id="agent-logo" label="Agent logo">
+              <label className="flex h-40 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-[#dce3d7] bg-[#fbfcfa] px-4 py-3 text-center transition hover:border-[#a8be91] hover:bg-[#f8faf5]">
+                <Input
+                  id="agent-logo"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="sr-only"
+                  onChange={(event) =>
+                    handleLogoChange(event.target.files?.[0])
+                  }
+                />
+                <div className="flex size-12 items-center justify-center overflow-hidden rounded-xl border border-[#eff1ec] bg-white shadow-sm">
+                  {logoPreview ? (
+                    <img
+                      src={logoPreview}
+                      alt="Agent logo preview"
+                      className="size-full object-contain"
+                    />
+                  ) : (
+                    <ImageIcon
+                      aria-hidden="true"
+                      className="size-5 text-[#a0aa9c]"
+                    />
+                  )}
+                </div>
+                <span className="mt-2 text-xs font-semibold text-[#536052]">
+                  {logoPreview ? "Change agent logo" : "Choose an agent logo"}
+                </span>
+                <span className="mt-1 text-[10px] text-[#9aa398]">
+                  PNG, JPEG, or WebP · max 2 MB
+                </span>
+              </label>
+            </Field>
+
+            {logoError && (
+              <p className="mt-1 text-xs text-[#b75d47]" role="alert">
+                {logoError}
+              </p>
+            )}
+
+            {logoFile && (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  disabled={uploadLogoMutation.isPending}
+                  onClick={handleUploadLogo}
+                  className="inline-flex items-center gap-2 rounded-lg bg-[#27342b] px-3 py-2 text-xs font-medium text-white transition hover:bg-[#3b4b3d] disabled:opacity-50"
+                >
+                  {uploadLogoMutation.isPending ? (
+                    <LoaderCircle
+                      aria-hidden="true"
+                      className="size-3.5 animate-spin"
+                    />
+                  ) : (
+                    <Upload aria-hidden="true" className="size-3.5" />
+                  )}
+                  {uploadLogoMutation.isPending
+                    ? "Uploading..."
+                    : "Upload logo"}
+                </button>
+                <button
+                  type="button"
+                  disabled={uploadLogoMutation.isPending}
+                  onClick={() => {
+                    setLogoFile(null);
+                    setLogoPreview(agent.logoUrl ?? null);
+                    setLogoError("");
+                  }}
+                  className="rounded-lg px-3 py-2 text-xs font-medium text-[#879087] transition hover:bg-[#f8f9f6] hover:text-[#27342b] disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         <div>
           <Field
@@ -168,6 +288,21 @@ export function AgentConfigurationTab({ agent }: { agent: Agent }) {
               id="detail-website-error"
             >
               {errors.targetWebsiteUrl.message}
+            </p>
+          )}
+        </div>
+        <div>
+          <Field id="detail-description" label="Description">
+            <Input
+              className={inputClassName}
+              disabled={updateAgentMutation.isPending}
+              id="detail-description"
+              {...register("description")}
+            />
+          </Field>
+          {errors.description && (
+            <p className="mt-1 text-xs text-[#b75d47]">
+              {errors.description.message}
             </p>
           )}
         </div>

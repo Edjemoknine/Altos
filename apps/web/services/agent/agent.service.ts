@@ -252,3 +252,63 @@ export function useDeleteAgent(organizationId: string | undefined) {
     },
   });
 }
+export async function uploadAgentLogo(
+  organizationId: string,
+  agentId: string,
+  file: File,
+): Promise<Agent> {
+  requireApiUrl();
+
+  try {
+    const formData = new FormData();
+    formData.append("logo", file);
+
+    const response = await api.post<ApiResponse<Agent>>(
+      `/api/organizations/${encodeURIComponent(organizationId)}/agents/${encodeURIComponent(agentId)}/logo`,
+      formData,
+    );
+
+    const result = response.data;
+
+    if (!result.success || !result.data) {
+      throw new Error(result.message ?? "Unable to upload agent logo.");
+    }
+
+    return result.data;
+  } catch (error) {
+    throw new Error(
+      getErrorMessage(error, "Unable to upload agent logo. Please try again."),
+    );
+  }
+}
+
+export function useUploadAgentLogo(
+  organizationId: string | undefined,
+  agentId: string | undefined,
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (file: File) => {
+      if (!organizationId || !agentId) {
+        throw new Error("Select an organization and agent before uploading.");
+      }
+
+      return uploadAgentLogo(organizationId, agentId, file);
+    },
+    onSuccess: (updatedAgent) => {
+      queryClient.setQueryData(
+        agentQueryKeys.detail(organizationId, agentId),
+        updatedAgent,
+      );
+
+      queryClient.setQueryData<Agent[]>(
+        agentQueryKeys.list(organizationId),
+        (agents) =>
+          agents?.map((agent) =>
+            agent.id === updatedAgent.id ? updatedAgent : agent,
+          ),
+      );
+    },
+  });
+}

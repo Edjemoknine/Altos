@@ -6,6 +6,14 @@ import type { AgentSettings, AgentTone } from "../db/schema.ts";
 import { and, desc, eq } from "drizzle-orm";
 import { agentWidgetKeys } from "../db/schema.ts";
 import { generateWidgetKey, hashWidgetKey } from "../utils/widget-key.ts";
+
+import { randomUUID } from "node:crypto";
+import {
+  uploadObject,
+  getPublicObjectUrl,
+  deleteUploadedObject,
+} from "../services/storage/r2.service.ts";
+
 const AGENT_TONES: AgentTone[] = [
   "professional",
   "friendly",
@@ -540,4 +548,186 @@ export const deleteAgentWidgetKey = async (c: AgentContext) => {
     success: true,
     message: "Widget API key deleted successfully",
   });
+};
+
+const MAX_LOGO_SIZE = 2 * 1024 * 1024; // 2 MB
+
+const LOGO_TYPES = {
+  "image/png": {
+    extension: "png",
+    matches: (bytes: Buffer) =>
+      bytes
+        .subarray(0, 8)
+        .equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])),
+  },
+  "image/jpeg": {
+    extension: "jpg",
+    matches: (bytes: Buffer) =>
+      bytes.length >= 3 &&
+      bytes[0] === 0xff &&
+      bytes[1] === 0xd8 &&
+      bytes[2] === 0xff,
+  },
+  "image/webp": {
+    extension: "webp",
+    matches: (bytes: Buffer) =>
+      bytes.length >= 12 &&
+      bytes.toString("ascii", 0, 4) === "RIFF" &&
+      bytes.toString("ascii", 8, 12) === "WEBP",
+  },
+} as const;
+
+function getR2StorageKeyFromPublicUrl(url: string | null): string | null {
+  const publicBaseUrl = process.env.R2_PUBLIC_URL?.replace(/\/+$/, "");
+
+  if (!publicBaseUrl || !url?.startsWith(`${publicBaseUrl}/`)) {
+    return null;
+  }
+
+  try {
+    return decodeURIComponent(url.slice(publicBaseUrl.length + 1));
+  } catch {
+    return null;
+  }
+}
+
+export const uploadAgentLogo = async (c: AgentContext) => {
+  const organizationId = c.get("organizationMembership").organizationId;
+  const agentId = getAgentId(c);
+
+  if (!agentId || !isValidUuid(agentId)) {
+    return c.json({ success: false, message: "Invalid agent ID" }, 400);
+  }
+
+  // Confirm that this agent belongs to the current organization.
+  const [agent] = await db
+    .select({
+      id: agents.id,
+      logoUrl: agents.logoUrl,
+    })
+    .from(agents)
+    .where(
+      and(eq(agents.id, agentId), eq(agents.organizationId, organizationId)),
+    )
+    .limit(1);
+
+  if (!agent) {
+    return c.json({ success: false, message: "Agent not found" }, 404);
+  }
+
+  let formData: FormData;
+
+  try {
+    formData = await c.req.formData();
+  } catch {
+    return c.json(
+      { success: false, message: "Invalid multipart form data" },
+      400,
+    );
+  }
+
+  const file = formData.get("logo");
+
+  if (!(file instanceof File)) {
+    return c.json(
+      { success: false, message: "A logo image file is required" },
+      400,
+    );
+  }
+
+  if (file.size === 0 || file.size > MAX_LOGO_SIZE) {
+    return c.json(
+      { success: false, message: "Logo must be between 1 byte and 2 MB" },
+      400,
+    );
+  }
+
+  const imageType = LOGO_TYPES[file.type as keyof typeof LOGO_TYPES];
+
+  if (!imageType) {
+    return c.json(
+      {
+        success: false,
+        message: "Only PNG, JPEG, and WebP images are allowed",
+      },
+      400,
+    );
+  }
+
+  const body = Buffer.from(await file.arrayBuffer());
+
+  // Verify the actual file signature instead of trusting its MIME type.
+  if (!imageType.matches(body)) {
+    return c.json(
+      { success: false, message: "The uploaded file is not a valid image" },
+      400,
+    );
+  }
+
+  const storageKey = `organizations/${organizationId}/agents/${agentId}/logo/${randomUUID()}.${imageType.extension}`;
+
+  let uploaded = false;
+
+  try {
+    await uploadObject({
+      storageKey,
+      contentType: file.type,
+      body,
+    });
+
+    uploaded = true;
+
+    const logoUrl = getPublicObjectUrl(storageKey);
+
+    const [updatedAgent] = await db
+      .update(agents)
+      .set({
+        logoUrl,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(eq(agents.id, agentId), eq(agents.organizationId, organizationId)),
+      )
+      .returning();
+
+    if (!updatedAgent) {
+      await deleteUploadedObject(storageKey);
+
+      return c.json({ success: false, message: "Agent not found" }, 404);
+    }
+
+    // Delete the previous logo only after the new URL is saved.
+    const previousStorageKey = getR2StorageKeyFromPublicUrl(agent.logoUrl);
+
+    if (previousStorageKey) {
+      try {
+        await deleteUploadedObject(previousStorageKey);
+      } catch (error) {
+        // A cleanup failure should not invalidate the successful upload.
+        console.error("Failed to delete previous agent logo:", error);
+      }
+    }
+
+    return c.json({
+      success: true,
+      message: "Agent logo uploaded successfully",
+      data: updatedAgent,
+    });
+  } catch (error) {
+    // Avoid leaving an uploaded object behind if the database update fails.
+    if (uploaded) {
+      try {
+        await deleteUploadedObject(storageKey);
+      } catch (cleanupError) {
+        console.error("Failed to clean up uploaded agent logo:", cleanupError);
+      }
+    }
+
+    console.error("Failed to upload agent logo:", error);
+
+    return c.json(
+      { success: false, message: "Failed to upload agent logo" },
+      500,
+    );
+  }
 };

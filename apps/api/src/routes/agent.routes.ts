@@ -6,6 +6,7 @@ import {
   getAgentById,
   updateAgent,
   deleteAgent,
+  uploadAgentLogo,
 } from "../controllers/agent.controller.ts";
 import {
   createAgentWidgetKey,
@@ -50,5 +51,11 @@ agentRoutes.delete(
   "/:agentId/widget-keys/:keyId",
   requireAgentOrganizationRole(["owner"]),
   deleteAgentWidgetKey,
+);
+
+agentRoutes.post(
+  "/:agentId/logo",
+  requireAgentOrganizationRole(["owner"]),
+  uploadAgentLogo,
 );
 export default agentRoutes;

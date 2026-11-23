@@ -62,3 +62,36 @@ export async function deleteUploadedObject(storageKey: string) {
     }),
   );
 }
+
+export type UploadObjectOptions = {
+  storageKey: string;
+  contentType: string;
+  body: Buffer;
+};
+
+export async function uploadObject({
+  storageKey,
+  contentType,
+  body,
+}: UploadObjectOptions) {
+  return r2.send(
+    new PutObjectCommand({
+      Bucket: R2_BUCKET,
+      Key: storageKey,
+      ContentType: contentType,
+      Body: body,
+    }),
+  );
+}
+export function getPublicObjectUrl(storageKey: string) {
+  const publicUrl = process.env.R2_PUBLIC_URL;
+
+  if (!publicUrl) {
+    throw new Error("Missing R2_PUBLIC_URL environment variable");
+  }
+
+  return `${publicUrl.replace(/\/+$/, "")}/${storageKey
+    .split("/")
+    .map(encodeURIComponent)
+    .join("/")}`;
+}
