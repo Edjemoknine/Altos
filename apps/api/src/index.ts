@@ -12,10 +12,15 @@ import { agentPreviewRoutes } from "./routes/agent-preview.routes.ts";
 const app = new Hono().basePath("/api");
 
 // CORS - apply to every route under /api
+const allowedOrigins = [
+  process.env.FRONTEND_URL, // dashboard app
+  process.env.WIDGET_URL, // Widget app
+].filter((origin): origin is string => Boolean(origin));
+
 app.use(
   "*",
   cors({
-    origin: process.env.FRONTEND_URL!,
+    origin: (origin) => (allowedOrigins.includes(origin) ? origin : ""),
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowHeaders: [
       "Content-Type",

@@ -12,9 +12,11 @@ import {
   getAgentWidgetKeys,
   deleteAgentWidgetKey,
 } from "../controllers/agent.controller.ts";
+import { requireAgentOrganizationRole } from "../middlewares/organization.middleware.ts";
+import { requireAuth } from "../middlewares/auth.middleware.ts";
 
 const agentRoutes = new Hono();
-
+agentRoutes.use("*", requireAuth);
 agentRoutes.get("/", requireOrganizationRole(["owner", "member"]), getAgents);
 
 agentRoutes.post("/", requireOrganizationRole(["owner"]), createAgent);
@@ -34,19 +36,19 @@ agentRoutes.delete(
 );
 agentRoutes.post(
   "/:agentId/widget-keys",
-  requireOrganizationRole(["owner"]),
+  requireAgentOrganizationRole(["owner"]),
   createAgentWidgetKey,
 );
 
 agentRoutes.get(
   "/:agentId/widget-keys",
-  requireOrganizationRole(["owner"]),
+  requireAgentOrganizationRole(["owner"]),
   getAgentWidgetKeys,
 );
 
 agentRoutes.delete(
   "/:agentId/widget-keys/:keyId",
-  requireOrganizationRole(["owner"]),
+  requireAgentOrganizationRole(["owner"]),
   deleteAgentWidgetKey,
 );
 export default agentRoutes;

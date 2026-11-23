@@ -12,7 +12,7 @@ export type CreateAgentInput = {
   description: string;
   instructions: string;
   settings: {
-    website: string;
+    targetWebsiteUrl: string;
     tone: AgentTone;
   };
 };

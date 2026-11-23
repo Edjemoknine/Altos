@@ -18,6 +18,13 @@ const UUID_REGEX =
 export const requireAgentOrganizationRole = (allowedRoles: string[]) =>
   createMiddleware<OrganizationEnv>(async (c, next) => {
     const user = c.get("user");
+
+    if (!user) {
+      throw new HTTPException(401, {
+        message: "Unauthorized",
+      });
+    }
+
     const agentId = c.req.param("agentId");
 
     if (!agentId || !UUID_REGEX.test(agentId)) {

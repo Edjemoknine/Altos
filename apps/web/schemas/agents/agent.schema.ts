@@ -6,7 +6,7 @@ export const agentToneSchema = z.enum(agentTones);
 export const createAgentSchema = z.object({
   name: z.string().trim().min(1, "Enter an agent name.").max(100),
   description: z.string().trim().min(1, "Enter a description.").max(300),
-  website: z
+  targetWebsiteUrl: z
     .string()
     .trim()
     .min(1, "Enter a website URL.")

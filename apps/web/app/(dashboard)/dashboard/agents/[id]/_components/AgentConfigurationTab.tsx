@@ -27,8 +27,10 @@ function getConfigurationValues(agent: Agent): AgentConfigurationFormValues {
     name: agent.name,
     tone: getAgentTone(agent),
     description: agent.description,
-    website:
-      typeof agent.settings.website === "string" ? agent.settings.website : "",
+    targetWebsiteUrl:
+      typeof agent.settings.targetWebsiteUrl === "string"
+        ? agent.settings.targetWebsiteUrl
+        : "",
     prompt: agent.instructions,
   };
 }
@@ -62,7 +64,7 @@ export function AgentConfigurationTab({ agent }: { agent: Agent }) {
         instructions: values.prompt,
         settings: {
           ...agent.settings,
-          website: values.website,
+          targetWebsiteUrl: values.targetWebsiteUrl,
           tone: values.tone,
         },
       });
@@ -149,23 +151,23 @@ export function AgentConfigurationTab({ agent }: { agent: Agent }) {
             hint="Changing your website does not automatically refresh the knowledge base."
           >
             <Input
-              aria-invalid={Boolean(errors.website)}
+              aria-invalid={Boolean(errors.targetWebsiteUrl)}
               aria-describedby={
-                errors.website ? "detail-website-error" : undefined
+                errors.targetWebsiteUrl ? "detail-website-error" : undefined
               }
               className={inputClassName}
               disabled={updateAgentMutation.isPending}
               id="detail-website"
               type="url"
-              {...register("website")}
+              {...register("targetWebsiteUrl")}
             />
           </Field>
-          {errors.website && (
+          {errors.targetWebsiteUrl && (
             <p
               className="mt-1 text-xs text-[#b75d47]"
               id="detail-website-error"
             >
-              {errors.website.message}
+              {errors.targetWebsiteUrl.message}
             </p>
           )}
         </div>

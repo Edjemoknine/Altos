@@ -43,7 +43,7 @@ export default function NewAgentPage() {
     defaultValues: {
       name: "",
       description: "",
-      website: "",
+      targetWebsiteUrl: "",
       tone: "friendly",
       prompt: "",
     },
@@ -59,7 +59,7 @@ export default function NewAgentPage() {
     }
 
     try {
-      const parsedUrl = new URL(values.website);
+      const parsedUrl = new URL(values.targetWebsiteUrl);
       const normalizedWebsite =
         parsedUrl.origin + parsedUrl.pathname.replace(/\/$/, "");
 
@@ -68,7 +68,7 @@ export default function NewAgentPage() {
         description: values.description,
         instructions: values.prompt,
         settings: {
-          website: normalizedWebsite,
+          targetWebsiteUrl: normalizedWebsite,
           tone: values.tone,
         },
       });
@@ -175,22 +175,22 @@ export default function NewAgentPage() {
             <Input
               className={inputClassName}
               id="agent-website"
-              aria-invalid={Boolean(errors.website)}
+              aria-invalid={Boolean(errors.targetWebsiteUrl)}
               aria-describedby={
-                errors.website ? "agent-website-error" : undefined
+                errors.targetWebsiteUrl ? "agent-website-error" : undefined
               }
               placeholder="https://yourcompany.com"
               type="url"
               disabled={isSubmitting}
-              {...register("website")}
+              {...register("targetWebsiteUrl")}
             />
           </Field>
-          {errors.website && (
+          {errors.targetWebsiteUrl && (
             <p
               className="-mt-4 text-xs text-[#b75d47]"
               id="agent-website-error"
             >
-              {errors.website.message}
+              {errors.targetWebsiteUrl.message}
             </p>
           )}
 

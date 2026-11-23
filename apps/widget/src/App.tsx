@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { Button } from "@repo/ui/components/button";
-import type { WidgetUIMessage } from "./types/widget";
+import type { PublicChatSource, WidgetUIMessage } from "./types/widget";
 
 const params = new URLSearchParams(window.location.search);
 
@@ -74,7 +74,8 @@ export default function App() {
       },
     });
 
-  const isLoading = status === "submitted" || status === "streaming";
+  const isLoading =
+    isRestoring || status === "submitted" || status === "streaming";
 
   useEffect(() => {
     const controller = new AbortController();
@@ -205,6 +206,11 @@ export default function App() {
 
       {/* Messages */}
       <div className="flex-1 space-y-4 overflow-y-auto p-3 text-sm">
+        {isRestoring && (
+          <p className="text-xs text-muted-foreground">
+            Restoring conversation...
+          </p>
+        )}
         {messages.map((message) => (
           <div
             key={message.id}
