@@ -13,7 +13,12 @@ import {
   MessageScrollerViewport,
 } from "@repo/ui/components/message-scroller";
 import { Input } from "@repo/ui/components/input";
-import type { PublicChatSource, WidgetUIMessage } from "./types/widget";
+import type {
+  PublicChatSource,
+  WidgetConfig,
+  WidgetUIMessage,
+} from "./types/widget";
+import { Bot } from "lucide-react";
 
 const params = new URLSearchParams(window.location.search);
 
@@ -92,6 +97,43 @@ function getVisitorId() {
 export default function App() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
+
+  const [agentConfig, setAgentConfig] = useState<WidgetConfig | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadAgentConfig() {
+      try {
+        const response = await fetch(
+          `${API_URL}/api/chat/${encodeURIComponent(publicId)}/config`,
+          {
+            headers: {
+              "X-Widget-Key": apiKey,
+              "X-Widget-Origin": customerOrigin,
+            },
+            signal: controller.signal,
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error("Unable to load agent configuration.");
+        }
+
+        const result = await response.json();
+
+        setAgentConfig(result.data);
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          console.error("Failed to load agent configuration:", error);
+        }
+      }
+    }
+
+    loadAgentConfig();
+
+    return () => controller.abort();
+  }, []);
 
   const visitorId = useMemo(() => getVisitorId(), []);
   const [conversationId, setConversationId] = useState<string | undefined>();
@@ -256,11 +298,25 @@ export default function App() {
         {/*chat header*/}
         <div className="flex items-center justify-between border-b border-[#eff1ec] px-5 py-4">
           <div className="flex items-center gap-3">
-            <span className="flex size-9 items-center justify-center rounded-xl bg-[#f1f5ed] text-lg text-[#64804b]">
-              <span aria-hidden="true">✦</span>
+            <span className="flex items-center justify-center rounded-xl bg-[#f1f5ed] text-lg text-[#64804b]">
+              <span aria-hidden="true">
+                {agentConfig?.logoUrl ? (
+                  <img
+                    src={agentConfig.logoUrl}
+                    alt={agentConfig.name}
+                    className="h-10 w-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                    <Bot className="h-5 w-5" />
+                  </div>
+                )}
+              </span>
             </span>
             <div>
-              <h2 className="text-sm font-semibold text-[#27342b]">Support</h2>
+              <h2 className="text-sm font-semibold text-[#27342b]">
+                {agentConfig?.name ?? "Customer Support"}
+              </h2>
               <p className="mt-1 text-xs text-[#879087]">
                 We&apos;re here to help.
               </p>

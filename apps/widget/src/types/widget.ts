@@ -21,6 +21,11 @@ export type WidgetMessage = {
   createdAt: string;
 };
 
+export type WidgetConfig = {
+  name: string;
+  logoUrl: string | null;
+};
+
 export type WidgetConversation = {
   id: string;
   title: string;
