@@ -24,7 +24,8 @@
   iframe.style.cssText =
     "position:fixed;bottom:20px;right:20px;border:0;background:transparent;" +
     "z-index:2147483647;color-scheme:normal;" +
-    "max-width:calc(100vw - 40px);max-height:calc(100vh - 40px);" +
+    "max-width:calc(100vw - 40px);max-height:calc(100vh - 40px);border-radius:30px;" +
+    "transition:width 200ms ease-out,height 200ms ease-out;" +
     "width:" + CLOSED.w + ";height:" + CLOSED.h + ";";
 
   document.body.appendChild(iframe);
