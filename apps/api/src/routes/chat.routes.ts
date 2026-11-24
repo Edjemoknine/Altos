@@ -106,6 +106,7 @@ chatRoutes.post("/:publicId/messages", async (c) => {
     execute: async ({ writer }) => {
       const textId = "assistant-response";
       let textStarted = false;
+      let sources: PublicChatSource[] | undefined;
 
       writer.write({ type: "start" });
 
@@ -129,10 +130,7 @@ chatRoutes.post("/:publicId/messages", async (c) => {
             }
 
             case "sources": {
-              writer.write({
-                type: "data-sources",
-                data: event.sources,
-              });
+              sources = event.sources;
               break;
             }
 
@@ -168,6 +166,13 @@ chatRoutes.post("/:publicId/messages", async (c) => {
                   messageId: event.messageId,
                 },
               });
+
+              if (sources) {
+                writer.write({
+                  type: "data-sources",
+                  data: sources,
+                });
+              }
               break;
             }
           }

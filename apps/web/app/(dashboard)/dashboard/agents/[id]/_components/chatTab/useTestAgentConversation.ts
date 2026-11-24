@@ -95,6 +95,9 @@ export function useTestAgentConversation({
 
     const userMessageId = Date.now();
     const assistantMessageId = userMessageId + 1;
+    let pendingSources:
+      | Extract<ChatStreamEvent, { type: "sources" }>["sources"]
+      | undefined;
 
     setMessages((current) => [
       ...current,
@@ -117,13 +120,7 @@ export function useTestAgentConversation({
           break;
 
         case "sources":
-          setMessages((current) =>
-            current.map((item) =>
-              item.id === assistantMessageId
-                ? { ...item, sources: uniqueSourcesByDocument(event.sources) }
-                : item,
-            ),
-          );
+          pendingSources = event.sources;
           break;
 
         case "token":
@@ -150,6 +147,21 @@ export function useTestAgentConversation({
         message: text,
         onEvent: handleChatEvent,
       });
+
+      const completedSources = pendingSources;
+
+      if (completedSources) {
+        setMessages((current) =>
+          current.map((item) =>
+            item.id === assistantMessageId
+              ? {
+                  ...item,
+                  sources: uniqueSourcesByDocument(completedSources),
+                }
+              : item,
+          ),
+        );
+      }
     } catch (error) {
       console.error("Failed to send chat message:", error);
 

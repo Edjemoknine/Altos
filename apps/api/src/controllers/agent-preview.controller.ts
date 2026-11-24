@@ -4,7 +4,10 @@ import { and, eq } from "drizzle-orm";
 
 import { db } from "../db/index.ts";
 import { agents } from "../db/schema.ts";
-import { streamChatResponse } from "../services/ai/chat/chat.service.ts";
+import {
+  streamChatResponse,
+  type ChatStreamEvent,
+} from "../services/ai/chat/chat.service.ts";
 import { restoreVisitorConversation } from "../services/ai/chat/conversation.service.ts";
 import type { OrganizationEnv } from "../middlewares/organization.middleware.ts";
 
@@ -153,12 +156,27 @@ export const sendPreviewMessage = async (c: PreviewContext) => {
           organizationId,
           ...input,
         });
+        let pendingSources:
+          | Extract<ChatStreamEvent, { type: "sources" }>
+          | undefined;
 
         for await (const event of generator) {
+          if (event.type === "sources") {
+            pendingSources = event;
+            continue;
+          }
+
           await stream.writeSSE({
             event: event.type,
             data: JSON.stringify(event),
           });
+
+          if (event.type === "done" && pendingSources) {
+            await stream.writeSSE({
+              event: pendingSources.type,
+              data: JSON.stringify(pendingSources),
+            });
+          }
         }
       } catch (error) {
         console.error("Agent preview chat stream failed:", error);

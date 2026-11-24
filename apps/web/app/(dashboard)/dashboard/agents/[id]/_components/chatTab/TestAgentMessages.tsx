@@ -50,9 +50,7 @@ export function TestAgentMessages({
                   <MessageContent className="max-w-[82%] gap-0">
                     <Bubble
                       align={message.role === "user" ? "end" : "start"}
-                      variant={
-                        message.role === "user" ? "default" : "outline"
-                      }
+                      variant={message.role === "user" ? "default" : "outline"}
                       className="max-w-full"
                     >
                       <BubbleContent

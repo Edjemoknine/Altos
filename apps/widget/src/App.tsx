@@ -140,6 +140,7 @@ export default function App() {
 
   const isLoading =
     isRestoring || status === "submitted" || status === "streaming";
+  const isStreaming = status === "submitted" || status === "streaming";
 
   useEffect(() => {
     const controller = new AbortController();
@@ -334,7 +335,12 @@ export default function App() {
 
                           if (
                             part.type === "data-sources" &&
-                            part.data.length > 0
+                            part.data.length > 0 &&
+                            !(
+                              isStreaming &&
+                              message.role === "assistant" &&
+                              message.id === messages[messages.length - 1]?.id
+                            )
                           ) {
                             return (
                               <MessageSources
