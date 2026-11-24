@@ -1,14 +1,16 @@
 import type { WidgetCredentials } from "../types/widget";
 
-function getApiUrl(API_URL: string): string {
-  if (!API_URL) {
+function getApiUrl(apiUrl: string | undefined): string {
+  const normalizedApiUrl = apiUrl?.replace(/\/+$/, "");
+
+  if (!normalizedApiUrl) {
     throw new Error("VITE_API_URL is not configured");
   }
 
-  return API_URL;
+  return normalizedApiUrl;
 }
 
-function getHeaders(credentials: WidgetCredentials): HeadersInit {
+function getHeaders(credentials: WidgetCredentials): Record<string, string> {
   return {
     "Content-Type": "application/json",
     "X-Widget-Key": credentials.apiKey,
@@ -19,14 +21,14 @@ function getHeaders(credentials: WidgetCredentials): HeadersInit {
 async function getErrorMessage(response: Response): Promise<string> {
   const result = await response.json().catch(() => null);
 
-  return result?.message ?? `Request failed with status ${response.status}`;
+  return (
+    (typeof result?.message === "string" && result.message) ||
+    `Request failed with status ${response.status}`
+  );
 }
 
-/**
- * Creates or retrieves a stable visitor ID for this browser.
- */
-function getVisitorId(VISITOR_ID_STORAGE_KEY: string): string {
-  const existingId = localStorage.getItem(VISITOR_ID_STORAGE_KEY);
+function getVisitorId(storageKey: string): string {
+  const existingId = localStorage.getItem(storageKey);
 
   if (existingId) {
     return existingId;
@@ -34,7 +36,7 @@ function getVisitorId(VISITOR_ID_STORAGE_KEY: string): string {
 
   const visitorId = crypto.randomUUID();
 
-  localStorage.setItem(VISITOR_ID_STORAGE_KEY, visitorId);
+  localStorage.setItem(storageKey, visitorId);
 
   return visitorId;
 }
