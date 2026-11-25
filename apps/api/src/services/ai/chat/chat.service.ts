@@ -3,7 +3,7 @@ import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { chatModel } from "../models/chat-model.ts";
 import { retrieveRelevantChunks } from "../retrieval/retrieval.service.ts";
 import { buildChatPrompt } from "../retrieval/prompt.ts";
-
+import { randomUUID } from "node:crypto";
 import {
   createConversation,
   getConversationHistory,
@@ -14,6 +14,7 @@ import { createMessage } from "../chat/message.service.ts";
 
 import type { MessageSource } from "../../../db/schema.ts";
 import { getActiveAgentByPublicId } from "./agent-chat.service.ts";
+import { recordUsage } from "../../usage/usage.service.ts";
 
 const MAX_MESSAGE_LENGTH = 4000;
 
@@ -23,6 +24,7 @@ export type SendChatMessageInput = {
   conversationId?: string;
   message: string;
   organizationId?: string;
+  source: "widget" | "playground";
 };
 
 export type ChatStreamEvent =
@@ -89,6 +91,7 @@ export async function* streamChatResponse({
   conversationId,
   message,
   organizationId,
+  source,
 }: SendChatMessageInput): AsyncGenerator<ChatStreamEvent> {
   // 1. Validate the incoming message.
   const normalizedMessage = message.trim();
@@ -196,9 +199,26 @@ export async function* streamChatResponse({
   // 10. Stream the OpenAI response.
   let assistantResponse = "";
 
+  let usage:
+    | {
+        inputTokens: number;
+        outputTokens: number;
+        totalTokens: number;
+      }
+    | undefined;
+
+  const requestId = randomUUID();
   const stream = await chatModel.stream(promptMessages);
 
   for await (const chunk of stream) {
+    if (chunk.usage_metadata) {
+      usage = {
+        inputTokens: chunk.usage_metadata.input_tokens,
+        outputTokens: chunk.usage_metadata.output_tokens,
+        totalTokens: chunk.usage_metadata.total_tokens,
+      };
+    }
+
     const token = extractText(chunk.content);
 
     if (!token) {
@@ -225,7 +245,37 @@ export async function* streamChatResponse({
     sources,
   });
 
-  // 12. Notify the client that generation is complete.
+  try {
+    await recordUsage({
+      organizationId: agent.organizationId,
+      agentId: agent.id,
+
+      source,
+      operation: "chat",
+      status: "success",
+
+      provider: "openai",
+      model: "gpt-4.1-mini",
+
+      inputTokens: usage?.inputTokens ?? null,
+      outputTokens: usage?.outputTokens ?? null,
+      totalTokens: usage?.totalTokens ?? null,
+
+      measurement: usage ? "measured" : "unavailable",
+
+      requestId,
+      idempotencyKey: `chat:${assistantMessage.id}`,
+
+      metadata: {
+        conversationId: conversationIdToUse,
+      },
+    });
+  } catch (error) {
+    // Analytics failures must not interrupt a successful chat.
+    console.error("Failed to record chat usage:", error);
+  }
+
+  // 13. Notify the client that generation is complete.
   yield {
     type: "done",
     messageId: assistantMessage.id,

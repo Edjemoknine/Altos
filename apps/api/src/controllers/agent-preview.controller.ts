@@ -154,11 +154,11 @@ export const sendPreviewMessage = async (c: PreviewContext) => {
         const generator = streamChatResponse({
           publicId: agent.publicId,
           organizationId,
+          source: "playground",
           ...input,
         });
         let pendingSources:
-          | Extract<ChatStreamEvent, { type: "sources" }>
-          | undefined;
+          Extract<ChatStreamEvent, { type: "sources" }> | undefined;
 
         for await (const event of generator) {
           if (event.type === "sources") {

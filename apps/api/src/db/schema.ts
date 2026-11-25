@@ -9,6 +9,7 @@ import { ingestionJobs } from "./schemas/ingestion-job.ts";
 import { conversations } from "./schemas/conversations.ts";
 import { messages } from "./schemas/messages.ts";
 import { agentWidgetKeys } from "./schemas/agent-widget-key.ts";
+import { usageEvents } from "./schemas/usage_events.ts";
 
 export * from "./schemas/agent-widget-key.ts";
 export * from "./schemas/auth.ts";
@@ -20,6 +21,7 @@ export * from "./schemas/document-chunk.ts";
 export * from "./schemas/ingestion-job.ts";
 export * from "./schemas/conversations.ts";
 export * from "./schemas/messages.ts";
+export * from "./schemas/usage_events.ts";
 
 export const relations = defineRelations(
   {
@@ -36,6 +38,8 @@ export const relations = defineRelations(
     ingestionJobs,
     conversations,
     messages,
+    agentWidgetKeys,
+    usageEvents,
   },
   (r) => ({
     user: {
@@ -91,6 +95,10 @@ export const relations = defineRelations(
       conversations: r.many.conversations({
         from: r.organization.id,
         to: r.conversations.organizationId,
+      }),
+      usageEvents: r.many.usageEvents({
+        from: r.organization.id,
+        to: r.usageEvents.organizationId,
       }),
     },
     member: {

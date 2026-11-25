@@ -148,9 +148,9 @@ export async function sendChatMessage(c: Context) {
       try {
         const generator = streamChatResponse({
           publicId,
+          source: "widget",
           ...input,
         });
-
         for await (const event of generator) {
           switch (event.type) {
             case "conversation": {
