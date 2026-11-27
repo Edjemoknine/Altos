@@ -43,7 +43,8 @@ export async function retrieveRelevantChunks({
   const limit = Math.min(Math.max(1, Math.floor(topK)), MAX_TOP_K);
 
   // 1. Generate query embedding.
-  const queryEmbedding = await embedQuery(normalizedQuery);
+  const embeddingResult = await embedQuery(normalizedQuery);
+  const queryEmbedding = embeddingResult.vector;
 
   // 2. Record query embedding usage.
   const requestId = randomUUID();
@@ -57,11 +58,11 @@ export async function retrieveRelevantChunks({
       status: "success",
       provider: "openai",
       model: EMBEDDING_MODEL,
-      inputTokens: null,
+      inputTokens: embeddingResult.inputTokens,
       outputTokens: null,
-      totalTokens: null,
+      totalTokens: embeddingResult.inputTokens,
+      measurement: "measured",
       costMicros: null,
-      measurement: "unavailable",
       requestId,
       idempotencyKey: `query-embedding:${requestId}`,
       metadata: {
