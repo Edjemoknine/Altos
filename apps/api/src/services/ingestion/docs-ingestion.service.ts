@@ -4,7 +4,8 @@ import { splitDocument } from "../ai/ingestion/chunking.ts";
 import { embedChunks, EMBEDDING_MODEL } from "../ai/ingestion/embedding.ts";
 import { db } from "../../db/index.ts";
 import { documentChunks, documents } from "../../db/schema.ts";
-
+import { randomUUID } from "node:crypto";
+import { recordUsage } from "../usage/usage.service.ts";
 const INSERT_BATCH_SIZE = 50;
 
 type IngestDocumentInput = {
@@ -66,13 +67,50 @@ export async function ingestDocument({
 
   // 3. Generate embeddings.
   const embeddingStartedAt = Date.now();
-  console.log("Starting document embeddings", { chunkCount: chunks.length });
-  const vectors = await embedChunks(chunks.map((chunk) => chunk.pageContent));
+
+  console.log("Starting document embeddings", {
+    chunkCount: chunks.length,
+  });
+
+  const vectors = await embedChunks(
+    chunks.map((chunk) => chunk.pageContent),
+    {
+      onBatchUsage: async (usage) => {
+        try {
+          await recordUsage({
+            organizationId,
+            agentId,
+            source: "system",
+            operation: "embedding",
+            status: "success",
+            provider: "openai",
+            model: EMBEDDING_MODEL,
+            inputTokens: usage.inputTokens,
+            outputTokens: null,
+            totalTokens: usage.totalTokens,
+            measurement: "measured",
+            requestId: randomUUID(),
+            idempotencyKey: `document-embedding:${documentId}:${randomUUID()}`,
+            metadata: {
+              embeddingType: "document",
+              documentId,
+              sourceId,
+              chunksProcessed: usage.chunkCount,
+              batchNumber: usage.batchNumber,
+              totalBatches: usage.totalBatches,
+            },
+          });
+        } catch (error) {
+          console.error("Failed to record document embedding usage:", error);
+        }
+      },
+    },
+  );
+
   console.log("Generated document embeddings", {
     embeddingCount: vectors.length,
     elapsedMs: Date.now() - embeddingStartedAt,
   });
-
   if (vectors.length !== chunks.length) {
     throw new Error("Chunk and embedding counts do not match");
   }

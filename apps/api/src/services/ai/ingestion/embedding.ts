@@ -1,11 +1,28 @@
-import { embeddings } from "../models/embeddings.ts";
+import OpenAI from "openai";
 
 export const EMBEDDING_MODEL = "text-embedding-3-small";
 export const EMBEDDING_DIMENSIONS = 1536;
 
 const EMBEDDING_BATCH_SIZE = 64;
 
-export async function embedChunks(contents: string[]): Promise<number[][]> {
+const openai = new OpenAI();
+
+type EmbeddingBatchUsage = {
+  inputTokens: number;
+  totalTokens: number;
+  chunkCount: number;
+  batchNumber: number;
+  totalBatches: number;
+};
+
+type EmbedChunksOptions = {
+  onBatchUsage?: (usage: EmbeddingBatchUsage) => Promise<void>;
+};
+
+export async function embedChunks(
+  contents: string[],
+  options: EmbedChunksOptions = {},
+): Promise<number[][]> {
   if (contents.length === 0) {
     return [];
   }
@@ -24,7 +41,23 @@ export async function embedChunks(contents: string[]): Promise<number[][]> {
       chunkCount: batch.length,
     });
 
-    const batchVectors = await embeddings.embedDocuments(batch);
+    const response = await openai.embeddings.create({
+      model: EMBEDDING_MODEL,
+      input: batch,
+    });
+
+    // Record actual API usage for this batch.
+    await options.onBatchUsage?.({
+      inputTokens: response.usage.prompt_tokens,
+      totalTokens: response.usage.total_tokens,
+      chunkCount: batch.length,
+      batchNumber,
+      totalBatches,
+    });
+
+    const batchVectors = response.data
+      .sort((a, b) => a.index - b.index)
+      .map((item) => item.embedding);
 
     if (batchVectors.length !== batch.length) {
       throw new Error("Embedding count does not match chunk count");
