@@ -9,8 +9,8 @@ import { crawlWebsite } from "../services/crawling/website-crawler.service.ts";
 import { persistWebsiteDocuments } from "../services/crawling/website-document.service.ts";
 import { triggerSourceIngestion } from "../services/ingestion/trigger.service.ts";
 import { sources } from "../db/schema.ts";
-import { error } from "better-auth/api";
-
+import { randomUUID } from "node:crypto";
+import { recordUsage } from "../services/usage/usage.service.ts";
 type CrawlWebsitePayload = {
   jobId: string;
 };
@@ -75,10 +75,80 @@ export const crawlWebsiteTask = task({
     );
 
     // 4. Crawl the website.
-    const crawlResult = await crawlWebsite(source.url, {
-      maxPages: 50,
-      maxDepth: 3,
-    });
+    // 4. Crawl the website.
+    const crawlStartedAt = Date.now();
+    const crawlRequestId = randomUUID();
+
+    let crawlResult;
+
+    try {
+      crawlResult = await crawlWebsite(source.url, {
+        maxPages: 50,
+        maxDepth: 3,
+      });
+
+      const durationMs = Date.now() - crawlStartedAt;
+
+      try {
+        await recordUsage({
+          organizationId: result.job.organizationId,
+          agentId: result.job.agentId,
+          source: "system",
+          operation: "crawl",
+          status: crawlResult.pages.length > 0 ? "success" : "failed",
+          provider: null,
+          model: null,
+          pagesProcessed: crawlResult.pages.length,
+          measurement: "measured",
+          requestId: crawlRequestId,
+          idempotencyKey: `crawl:${jobId}:${crawlRequestId}`,
+          metadata: {
+            sourceId: result.job.sourceId,
+            failedPages: crawlResult.failedUrls.length,
+            durationMs,
+            maxPages: 50,
+            maxDepth: 3,
+          },
+        });
+      } catch (usageError) {
+        console.error("Failed to record website crawl usage:", usageError);
+      }
+    } catch (crawlError) {
+      const durationMs = Date.now() - crawlStartedAt;
+
+      try {
+        await recordUsage({
+          organizationId: result.job.organizationId,
+          agentId: result.job.agentId,
+          source: "system",
+          operation: "crawl",
+          status: "failed",
+          provider: null,
+          model: null,
+          pagesProcessed: 0,
+          measurement: "measured",
+          requestId: crawlRequestId,
+          idempotencyKey: `crawl:${jobId}:${crawlRequestId}`,
+          metadata: {
+            sourceId: result.job.sourceId,
+            durationMs,
+            maxPages: 50,
+            maxDepth: 3,
+            error:
+              crawlError instanceof Error
+                ? crawlError.message
+                : "Unknown crawling error",
+          },
+        });
+      } catch (usageError) {
+        console.error(
+          "Failed to record failed website crawl usage:",
+          usageError,
+        );
+      }
+
+      throw crawlError;
+    }
 
     if (crawlResult.pages.length === 0) {
       throw new Error(
