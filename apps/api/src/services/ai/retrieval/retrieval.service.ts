@@ -2,7 +2,9 @@ import { and, asc, cosineDistance, eq } from "drizzle-orm";
 import { embedQuery } from "./emdebQuery.ts";
 import { documentChunks, documents, sources } from "../../../db/schema.ts";
 import { db } from "../../../db/index.ts";
-
+import { randomUUID } from "node:crypto";
+import { recordUsage } from "../../usage/usage.service.ts";
+import { EMBEDDING_MODEL } from "./emdebQuery.ts";
 const DEFAULT_TOP_K = 5;
 const MAX_TOP_K = 10;
 
@@ -21,6 +23,7 @@ type RetrieveChunksInput = {
   organizationId: string;
   agentId: string;
   query: string;
+  source: "widget" | "playground";
   topK?: number;
 };
 
@@ -28,6 +31,7 @@ export async function retrieveRelevantChunks({
   organizationId,
   agentId,
   query,
+  source,
   topK = DEFAULT_TOP_K,
 }: RetrieveChunksInput): Promise<RetrievedChunk[]> {
   const normalizedQuery = query.trim();
@@ -40,6 +44,34 @@ export async function retrieveRelevantChunks({
 
   // 1. Generate query embedding.
   const queryEmbedding = await embedQuery(normalizedQuery);
+
+  // 2. Record query embedding usage.
+  const requestId = randomUUID();
+
+  try {
+    await recordUsage({
+      organizationId,
+      agentId,
+      source,
+      operation: "embedding",
+      status: "success",
+      provider: "openai",
+      model: EMBEDDING_MODEL,
+      inputTokens: null,
+      outputTokens: null,
+      totalTokens: null,
+      costMicros: null,
+      measurement: "unavailable",
+      requestId,
+      idempotencyKey: `query-embedding:${requestId}`,
+      metadata: {
+        embeddingType: "query",
+        dimensions: queryEmbedding.length,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to record query embedding usage:", error);
+  }
 
   // 2. Calculate cosine distance.
   const distance = cosineDistance(documentChunks.embedding, queryEmbedding);

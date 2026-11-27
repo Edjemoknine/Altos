@@ -155,6 +155,7 @@ export async function* streamChatResponse({
     organizationId: agent.organizationId,
     agentId: agent.id,
     query: normalizedMessage,
+    source,
   });
 
   // 7. Build structured citations.
